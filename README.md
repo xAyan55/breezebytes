@@ -1,35 +1,38 @@
-# XORA Saas Platform Landing Page
+# BreezeBytes — Free Minecraft Server Hosting
 
-A modern, responsive landing page concept for XORA — a SaaS platform designed with sleek UI/UX principles using React.js and Tailwind CSS.
+A modern, responsive landing page for **BreezeBytes** — free, simple, and accessible Minecraft server hosting designed with sleek UI/UX principles using React.js and Tailwind CSS.
 
 ## 📖 Overview
 
-![Screenshot](./README-IMGS/preview.png)
-
-XORA’s landing page delivers a professional and polished user interface, featuring smooth animations, interactive elements, and responsive layouts. It serves as an ideal base for SaaS product websites aiming for a clean, modern look.
+BreezeBytes delivers a fast, trustworthy, and polished user interface for Minecraft players and creators to launch their free Minecraft server with reliable 4 GB RAM allocations, 100% CPU thread, 10 GB NVMe storage, and intuitive control panel access.
 
 ## ⚙️ Tech Stack
 
 - Vite
 - React.js
 - Tailwind CSS
+- React Scroll
 
-## 🔋 Features
+## 🔋 Key Features
 
-- Beautiful Sections including hero, features, pricing, faq, download, testimonial, footer, and header.
+- **Free Minecraft Hosting**: 4 GB RAM, 100% CPU, 10 GB Storage with instant server setup.
+- **Easy Server Management**: Intuitive web control panel with live console and file management.
+- **Multi-Version Support**: Compatibility with Paper, Purpur, Vanilla, Fabric, and Spigot.
+- **Dark-First Gaming Design**: BreezeBytes brand identity with `#c5a6ff` purple accent and subtle textures.
+- **Fully Responsive**: Seamless browsing across desktops, laptops, tablets, and smartphones.
 
-- Utilizes tailwindcss for intricate shapes like circular feature displays, grid lines, and side lines.
+## 🚀 Getting Started
 
-- Latest UI Trends & Incorporates modern design elements.
+```bash
+# Install dependencies
+npm install
 
-- Enhances visuals with stylish gradients using Tailwind CSS for cards, buttons, etc.
+# Start development server
+npm run dev
 
-- Utilizes gradients, layered cards, bento-inspired layouts, and interactive hover states.
-
-- Fully Responsive & Optimized for seamless browsing across desktops, tablets, and smartphones.
-
-and many more, including code architecture and reusability
-
+# Build for production
+npm run build
+```
 
 ## 📄 License
 > This project is licensed under the MIT License.

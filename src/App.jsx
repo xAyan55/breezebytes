@@ -1,24 +1,18 @@
-import Header from "./sections/Header.jsx";
-import Hero from "./sections/Hero.jsx";
-import Features from "./sections/Features.jsx";
-import Pricing from "./sections/Pricing.jsx";
-import Faq from "./sections/Faq.jsx";
-import Testimonials from "./sections/Testimonial.jsx";
-import Download from "./sections/Download.jsx";
-import Footer from "./sections/Footer.jsx";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import LandingPage from "./pages/LandingPage.jsx";
+import AuthPage from "./pages/AuthPage.jsx";
 
 const App = () => {
   return (
-    <main className="overflow-hidden">
-      <Header />
-      <Hero />
-      <Features />
-      <Pricing />
-      <Faq />
-      <Testimonials />
-      <Download />
-      <Footer />
-    </main>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<AuthPage mode="login" />} />
+        <Route path="/register" element={<AuthPage mode="register" />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 };
+
 export default App;

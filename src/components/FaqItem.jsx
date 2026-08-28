@@ -18,13 +18,13 @@ const FaqItem = ({ item, index }) => {
       >
         <div className="flex-1">
           <div className="small-compact mb-1.5 text-p3 max-lg:hidden">
-            {index < 10 ? "0" : ""}
-            {index}
+            {index < 9 ? "0" : ""}
+            {index + 1}
           </div>
           <div
             className={clsx(
               "h6 text-p4 transition-colors duration-500 max-md:flex max-md:min-h-20 max-md:items-center",
-              active && "max-lg:text-p1",
+              active && "text-p1",
             )}
           >
             {item.question}
@@ -43,7 +43,9 @@ const FaqItem = ({ item, index }) => {
 
       <SlideDown>
         {activeId === item.id && (
-          <div className="body-3 px-7 py-3.5">{item.answer}</div>
+          <div className="body-3 px-7 py-3.5 text-p5 leading-relaxed">
+            {item.answer}
+          </div>
         )}
       </SlideDown>
 

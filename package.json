@@ -1,5 +1,5 @@
 {
-  "name": "xora",
+  "name": "breezebytes",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -15,6 +15,7 @@
     "react": "^18.3.1",
     "react-countup": "^6.5.3",
     "react-dom": "^18.3.1",
+    "react-router-dom": "^7.18.2",
     "react-scroll": "^1.9.0",
     "react-slidedown": "^2.4.7"
   },

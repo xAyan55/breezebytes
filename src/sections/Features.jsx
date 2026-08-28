@@ -1,6 +1,8 @@
-import { Element } from "react-scroll";
+import { Element, Link as LinkScroll } from "react-scroll";
+import { Link } from "react-router-dom";
 import { details, features } from "../constants/index.jsx";
 import Button from "../components/Button.jsx";
+
 const Features = () => {
   return (
     <section>
@@ -23,12 +25,22 @@ const Features = () => {
                   </div>
                 </div>
 
-                <p className="caption mb-5 max-md:mb-6 max-md:h5">{caption}</p>
+                <p className="caption mb-5 max-md:mb-6">{caption}</p>
                 <h2 className="max-w-400 mb-7 h3 text-p4 max-md:mb-6 max-md:h5">
                   {title}
                 </h2>
-                <p className="mb-11 body-1 max-md:mb-8 max-md:body-3">{text}</p>
-                <Button icon={button.icon}>{button.title}</Button>
+                <p className="mb-11 body-1 max-md:mb-8 max-md:body-3 text-p5">
+                  {text}
+                </p>
+                {id === "0" ? (
+                  <Link to="/register">
+                    <Button icon={button.icon}>{button.title}</Button>
+                  </Link>
+                ) : (
+                  <LinkScroll to="pricing" offset={-100} spy smooth>
+                    <Button icon={button.icon}>{button.title}</Button>
+                  </LinkScroll>
+                )}
               </div>
             ))}
             <ul className="relative flex justify-around flex-grow px-[5%] border-2 border-s3 rounded-7xl max-md:hidden">
@@ -45,7 +57,7 @@ const Features = () => {
                     />
                   </div>
 
-                  <h3 className="relative z-2 max-w-36 mx-auto my-0 base-small text-center uppercase">
+                  <h3 className="relative z-2 max-w-36 mx-auto my-0 base-small text-center uppercase text-p4">
                     {title}
                   </h3>
                 </li>
