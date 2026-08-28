@@ -1,18 +1,14 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../panel/context/AuthContext.jsx";
 import AuthInput from "./AuthInput.jsx";
 import PasswordInput from "./PasswordInput.jsx";
 import Button from "../Button.jsx";
 
-const DEFAULT_ADMIN = {
-  email: "ceo@breezebytes.bond",
-  password: "aryanop55@",
-  username: "CEO",
-  role: "admin",
-};
-
 const AuthForm = ({ mode = "login" }) => {
   const isLogin = mode === "login";
+  const navigate = useNavigate();
+  const { login, register } = useAuth();
 
   const [formData, setFormData] = useState({
     username: "",
@@ -23,7 +19,8 @@ const AuthForm = ({ mode = "login" }) => {
   });
 
   const [errors, setErrors] = useState({});
-  const [authSuccess, setAuthSuccess] = useState(null);
+  const [authError, setAuthError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const validate = () => {
     const newErrors = {};
@@ -66,39 +63,30 @@ const AuthForm = ({ mode = "login" }) => {
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }));
     }
+    if (authError) {
+      setAuthError(null);
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (validate()) {
-      const email = formData.email.trim().toLowerCase();
-      if (email === DEFAULT_ADMIN.email && formData.password === DEFAULT_ADMIN.password) {
-        const userObj = {
-          email: DEFAULT_ADMIN.email,
-          username: DEFAULT_ADMIN.username,
-          role: DEFAULT_ADMIN.role,
-          authenticatedAt: new Date().toISOString(),
-        };
-        try {
-          localStorage.setItem("bb_user", JSON.stringify(userObj));
-        } catch {
-          // ignore
+      try {
+        setSubmitting(true);
+        setAuthError(null);
+
+        if (isLogin) {
+          await login(formData.email.trim(), formData.password);
+        } else {
+          await register(formData.email.trim(), formData.username.trim(), formData.password);
         }
-        setAuthSuccess("Authenticated successfully as Administrator (CEO).");
-      } else {
-        const userObj = {
-          email: formData.email.trim(),
-          username: formData.username || formData.email.split("@")[0],
-          role: "user",
-          authenticatedAt: new Date().toISOString(),
-        };
-        try {
-          localStorage.setItem("bb_user", JSON.stringify(userObj));
-        } catch {
-          // ignore
-        }
-        setAuthSuccess(isLogin ? "Signed in successfully." : "Account created successfully.");
+
+        navigate("/panel");
+      } catch (err) {
+        setAuthError(err.message || "Authentication failed.");
+      } finally {
+        setSubmitting(false);
       }
     }
   };
@@ -128,9 +116,9 @@ const AuthForm = ({ mode = "login" }) => {
         </p>
       </div>
 
-      {authSuccess && (
-        <div className="mb-6 p-4 rounded-xl bg-p1/10 border border-p1/40 text-p1 text-sm font-medium text-center animate-fadeIn">
-          {authSuccess}
+      {authError && (
+        <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/40 text-red-400 text-sm font-medium text-center animate-fadeIn">
+          {authError}
         </div>
       )}
 
@@ -222,8 +210,9 @@ const AuthForm = ({ mode = "login" }) => {
           <Button
             containerClassName="w-full"
             icon="/images/magictouch.svg"
+            disabled={submitting}
           >
-            {isLogin ? "Sign In" : "Create Account"}
+            {submitting ? "Authenticating..." : isLogin ? "Sign In" : "Create Account"}
           </Button>
         </div>
       </form>
