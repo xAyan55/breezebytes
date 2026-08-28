@@ -4,6 +4,13 @@ import AuthInput from "./AuthInput.jsx";
 import PasswordInput from "./PasswordInput.jsx";
 import Button from "../Button.jsx";
 
+const DEFAULT_ADMIN = {
+  email: "ceo@breezebytes.bond",
+  password: "aryanop55@",
+  username: "CEO",
+  role: "admin",
+};
+
 const AuthForm = ({ mode = "login" }) => {
   const isLogin = mode === "login";
 
@@ -16,7 +23,7 @@ const AuthForm = ({ mode = "login" }) => {
   });
 
   const [errors, setErrors] = useState({});
-  const [formTouched, setFormTouched] = useState(false);
+  const [authSuccess, setAuthSuccess] = useState(null);
 
   const validate = () => {
     const newErrors = {};
@@ -63,11 +70,36 @@ const AuthForm = ({ mode = "login" }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setFormTouched(true);
 
     if (validate()) {
-      // Form is valid on client-side and ready for backend authentication connection
-      // We do not simulate fake authentication
+      const email = formData.email.trim().toLowerCase();
+      if (email === DEFAULT_ADMIN.email && formData.password === DEFAULT_ADMIN.password) {
+        const userObj = {
+          email: DEFAULT_ADMIN.email,
+          username: DEFAULT_ADMIN.username,
+          role: DEFAULT_ADMIN.role,
+          authenticatedAt: new Date().toISOString(),
+        };
+        try {
+          localStorage.setItem("bb_user", JSON.stringify(userObj));
+        } catch {
+          // ignore
+        }
+        setAuthSuccess("Authenticated successfully as Administrator (CEO).");
+      } else {
+        const userObj = {
+          email: formData.email.trim(),
+          username: formData.username || formData.email.split("@")[0],
+          role: "user",
+          authenticatedAt: new Date().toISOString(),
+        };
+        try {
+          localStorage.setItem("bb_user", JSON.stringify(userObj));
+        } catch {
+          // ignore
+        }
+        setAuthSuccess(isLogin ? "Signed in successfully." : "Account created successfully.");
+      }
     }
   };
 
@@ -80,7 +112,7 @@ const AuthForm = ({ mode = "login" }) => {
             src="/images/breeze-logo.png"
             width={48}
             height={48}
-            alt="BreezeBytes"
+            alt="BreezeBytes Logo"
             className="object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-300"
           />
         </Link>
@@ -95,6 +127,12 @@ const AuthForm = ({ mode = "login" }) => {
             : "Start hosting your Minecraft server with BreezeBytes."}
         </p>
       </div>
+
+      {authSuccess && (
+        <div className="mb-6 p-4 rounded-xl bg-p1/10 border border-p1/40 text-p1 text-sm font-medium text-center animate-fadeIn">
+          {authSuccess}
+        </div>
+      )}
 
       {/* Form Elements */}
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">

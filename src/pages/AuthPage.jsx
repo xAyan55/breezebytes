@@ -27,6 +27,20 @@ const AuthPage = ({ mode = "login" }) => {
       ? "Sign In — BreezeBytes"
       : "Create Account — BreezeBytes";
     window.scrollTo(0, 0);
+
+    let robotsMeta = document.querySelector('meta[name="robots"]');
+    if (!robotsMeta) {
+      robotsMeta = document.createElement("meta");
+      robotsMeta.setAttribute("name", "robots");
+      document.head.appendChild(robotsMeta);
+    }
+    robotsMeta.setAttribute("content", "noindex,follow");
+
+    return () => {
+      if (robotsMeta) {
+        robotsMeta.setAttribute("content", "index,follow");
+      }
+    };
   }, [isLogin]);
 
   return (

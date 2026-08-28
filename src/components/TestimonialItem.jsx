@@ -9,7 +9,7 @@ const TestimonialItem = ({ item, containerClassName }) => {
       )}
     >
       <blockquote className="h6 mb-8 text-p4 leading-relaxed font-normal">
-        "{item.comment}"
+        &ldquo;{item.comment}&rdquo;
       </blockquote>
 
       <div className="flex items-center max-xl:-mr-8">

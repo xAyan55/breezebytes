@@ -9,16 +9,18 @@ import Footer from "../sections/Footer.jsx";
 
 const LandingPage = () => {
   return (
-    <main className="overflow-hidden">
+    <div className="min-h-screen bg-s1 text-p5">
       <Header />
-      <Hero />
-      <Features />
-      <Pricing />
-      <Faq />
-      <Testimonials />
-      <Download />
+      <main className="overflow-hidden">
+        <Hero />
+        <Features />
+        <Pricing />
+        <Faq />
+        <Testimonials />
+        <Download />
+      </main>
       <Footer />
-    </main>
+    </div>
   );
 };
 

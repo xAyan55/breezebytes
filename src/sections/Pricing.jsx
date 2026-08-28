@@ -14,9 +14,9 @@ const Pricing = () => {
       <Element name="pricing">
         <div className="container">
           <div className="max-w-960 pricing-head_before relative mx-auto border-l border-r border-s2 bg-s1/50 pb-40 pt-28 max-xl:max-w-4xl max-lg:border-none max-md:pb-32 max-md:pt-16">
-            <h3 className="h3 max-lg:h4 max-md:h5 z-3 relative mx-auto mb-6 max-w-lg text-center text-p4 max-md:mb-4 max-sm:max-w-sm">
+            <h2 className="h3 max-lg:h4 max-md:h5 z-3 relative mx-auto mb-6 max-w-lg text-center text-p4 max-md:mb-4 max-sm:max-w-sm">
               Free Minecraft Hosting
-            </h3>
+            </h2>
             <p className="z-3 relative mx-auto mb-14 max-w-lg text-center text-p5 body-1 max-md:mb-10">
               Everything you need to start your Minecraft server without the cost.
             </p>

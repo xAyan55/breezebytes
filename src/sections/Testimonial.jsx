@@ -9,7 +9,7 @@ const Testimonials = () => {
       <div className="container block lg:flex">
         <div className="testimonials_head-res relative z-2 mr-20 flex-300">
           <p className="caption mb-5 max-md:mb-2.5">Why BreezeBytes</p>
-          <h3 className="h3 max-md:h5 text-p4">Built for Minecraft Players</h3>
+          <h2 className="h3 max-md:h5 text-p4">Built for Minecraft Players</h2>
         </div>
 
         <div className="testimonials_inner-after testimonials_inner-before relative -my-12 -mr-3 flex items-start max-lg:static max-md:block">
