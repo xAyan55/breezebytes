@@ -256,10 +256,10 @@ const ServerConsole = () => {
             </div>
           </div>
 
-          {/* Terminal Screen Output (Matches Pterodactyl height) */}
+          {/* Terminal Screen Output (Scaled 1.367x to 480px) */}
           <div
             ref={terminalEndRef}
-            className="p-4 font-mono text-xs sm:text-[13px] overflow-y-auto h-[350px] flex flex-col gap-1 select-text bg-[#07080c] text-zinc-300 scroll-smooth"
+            className="p-4 font-mono text-xs sm:text-[13px] overflow-y-auto h-[480px] flex flex-col gap-1 select-text bg-[#07080c] text-zinc-300 scroll-smooth"
           >
             {logs.length === 0 ? (
               <div className="my-auto flex flex-col items-center justify-center gap-2 text-center p-6 select-none">
