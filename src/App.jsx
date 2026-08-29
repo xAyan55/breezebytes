@@ -23,7 +23,6 @@ import ServerBackups from "./panel/pages/server/ServerBackups.jsx";
 import ServerSchedules from "./panel/pages/server/ServerSchedules.jsx";
 import ServerPlayers from "./panel/pages/server/ServerPlayers.jsx";
 import ServerDatabases from "./panel/pages/server/ServerDatabases.jsx";
-import ServerStartup from "./panel/pages/server/ServerStartup.jsx";
 import ServerNetwork from "./panel/pages/server/ServerNetwork.jsx";
 import ServerSettings from "./panel/pages/server/ServerSettings.jsx";
 
@@ -69,7 +68,7 @@ const App = () => {
             <Route path="/login" element={<AuthPage mode="login" />} />
             <Route path="/register" element={<AuthPage mode="register" />} />
 
-            {/* Protected Panel Routes */}
+            {/* Protected Panel Routes (Global Navigation Context) */}
             <Route
               path="/panel"
               element={
@@ -82,20 +81,6 @@ const App = () => {
               <Route path="servers" element={<ServerList />} />
               <Route path="servers/create" element={<CreateServer />} />
               <Route path="account" element={<AccountSettings />} />
-
-              {/* Dedicated Server Management Routes */}
-              <Route path="servers/:id" element={<ServerLayout />}>
-                <Route index element={<ServerConsole />} />
-                <Route path="console" element={<ServerConsole />} />
-                <Route path="files" element={<ServerFiles />} />
-                <Route path="backups" element={<ServerBackups />} />
-                <Route path="schedules" element={<ServerSchedules />} />
-                <Route path="players" element={<ServerPlayers />} />
-                <Route path="databases" element={<ServerDatabases />} />
-                <Route path="startup" element={<ServerStartup />} />
-                <Route path="network" element={<ServerNetwork />} />
-                <Route path="settings" element={<ServerSettings />} />
-              </Route>
 
               {/* Admin Routes */}
               <Route
@@ -138,6 +123,26 @@ const App = () => {
                   </AdminRoute>
                 }
               />
+            </Route>
+
+            {/* Dedicated Server Workspace Routes (Server Navigation Context) */}
+            <Route
+              path="/panel/servers/:id"
+              element={
+                <ProtectedRoute>
+                  <ServerLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<ServerConsole />} />
+              <Route path="console" element={<ServerConsole />} />
+              <Route path="files" element={<ServerFiles />} />
+              <Route path="players" element={<ServerPlayers />} />
+              <Route path="backups" element={<ServerBackups />} />
+              <Route path="schedules" element={<ServerSchedules />} />
+              <Route path="databases" element={<ServerDatabases />} />
+              <Route path="network" element={<ServerNetwork />} />
+              <Route path="settings" element={<ServerSettings />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />
