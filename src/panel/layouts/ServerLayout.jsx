@@ -357,10 +357,17 @@ const ServerLayout = () => {
         {/* Page Content Centered */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 flex flex-col items-center">
           <div className="w-full max-w-6xl mx-auto flex flex-col flex-1">
-            {/* ===== Server Header ===== */}
-            <div className="border-2 border-s3 rounded-2xl bg-s2 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-              <div className="flex items-center gap-3.5 min-w-0">
-                <div className="size-11 rounded-xl border border-s3 bg-s1 flex items-center justify-center p-1.5 flex-shrink-0">
+            {/* ===== Server Header with smooth blended banner ===== */}
+            <div className="relative border-2 border-s3 rounded-2xl bg-s2 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 overflow-hidden">
+              {/* Banner Image with low opacity smooth blend */}
+              <div
+                className="absolute inset-0 bg-cover bg-center opacity-25 pointer-events-none"
+                style={{ backgroundImage: "url('/images/banners/server-banner.jpeg')" }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-s2/95 via-s2/85 to-s2/70 pointer-events-none" />
+
+              <div className="relative z-10 flex items-center gap-3.5 min-w-0">
+                <div className="size-11 rounded-xl border border-s3 bg-s1/90 backdrop-blur-sm flex items-center justify-center p-1.5 flex-shrink-0 shadow-sm">
                   <img src="/images/detail-1.png" alt="" className="size-7 object-contain" />
                 </div>
                 <div className="min-w-0">
@@ -390,7 +397,7 @@ const ServerLayout = () => {
               </div>
 
               {/* Power Controls */}
-              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+              <div className="relative z-10 flex items-center gap-2 flex-wrap sm:flex-nowrap">
                 <BreezeButton
                   variant="primary"
                   size="sm"

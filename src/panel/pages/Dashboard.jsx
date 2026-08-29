@@ -111,14 +111,24 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {servers.slice(0, 6).map((s) => (
               <Link key={s.id} to={`/panel/servers/${s.id}/console`}>
-                <BreezeCard hover className="p-5 flex flex-col gap-4 h-full">
-                  <div className="flex items-start justify-between gap-3">
+                <BreezeCard hover className="relative p-5 flex flex-col justify-between gap-4 h-full overflow-hidden group">
+                  {/* Background Banner with Low Opacity Smooth Gradient Blend */}
+                  <div
+                    className="absolute inset-0 bg-cover bg-center opacity-20 group-hover:opacity-35 transition-opacity duration-500 pointer-events-none"
+                    style={{ backgroundImage: "url('/images/banners/server-card-bg.jpeg')" }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-s2 via-s2/85 to-s2/50 pointer-events-none" />
+
+                  {/* Card Content on Top */}
+                  <div className="relative z-10 flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="size-11 rounded-full border-2 border-s2 bg-s1 flex items-center justify-center shadow-500 flex-shrink-0">
-                        <img src="/images/detail-1.png" alt="" className="size-8 object-contain" />
+                      <div className="size-11 rounded-2xl border-2 border-s3 bg-s1/90 backdrop-blur-sm flex items-center justify-center p-1.5 flex-shrink-0">
+                        <img src="/images/detail-1.png" alt="" className="size-7 object-contain" />
                       </div>
                       <div className="min-w-0">
-                        <h3 className="base-bold text-p4 truncate">{s.name}</h3>
+                        <h3 className="base-bold text-p4 truncate group-hover:text-p1 transition-colors duration-300">
+                          {s.name}
+                        </h3>
                         <p className="small-2 text-p5 font-mono truncate">
                           {s.allocation
                             ? `${s.allocation.ip === '0.0.0.0' ? s.node?.fqdn || 'localhost' : s.allocation.ip}:${s.allocation.port}`
@@ -131,7 +141,7 @@ const Dashboard = () => {
                     </BreezeBadge>
                   </div>
 
-                  <div className="flex items-center gap-3 pt-3 border-t-2 border-s3">
+                  <div className="relative z-10 flex items-center gap-3 pt-3 border-t-2 border-s3/80">
                     <div className="flex items-center gap-1.5 text-p5">
                       <Cpu size={13} className="text-p1" />
                       <span className="small-2">{s.memory} MB</span>
