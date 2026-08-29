@@ -177,18 +177,18 @@ const ServerLayout = () => {
         />
       )}
 
-      {/* ===== Dedicated Server Sidebar (shadcn Composable Architecture) ===== */}
+      {/* ===== Dedicated Server Sidebar ===== */}
       <aside
         data-collapsed={collapsed}
         className={clsx(
-          'fixed top-0 left-0 bottom-0 bg-s2 border-r border-s3/80 flex flex-col z-50 transition-all duration-300 ease-in-out',
+          'fixed top-0 left-0 bottom-0 bg-s2 border-r-2 border-s3 flex flex-col z-50 transition-all duration-300 ease-in-out',
           'lg:static lg:z-auto',
-          collapsed ? 'lg:w-[68px]' : 'lg:w-[240px]',
-          mobileOpen ? 'translate-x-0 w-[240px]' : '-translate-x-full lg:translate-x-0',
+          collapsed ? 'lg:w-[76px]' : 'lg:w-[260px]',
+          mobileOpen ? 'translate-x-0 w-[260px]' : '-translate-x-full lg:translate-x-0',
         )}
       >
         {/* Sidebar Header */}
-        <div className="p-3.5 border-b border-s3/60 flex flex-col gap-3">
+        <div className="p-4 border-b-2 border-s3 flex flex-col gap-3.5">
           <div className="flex items-center justify-between">
             <Link
               to="/panel"
@@ -199,13 +199,13 @@ const ServerLayout = () => {
             >
               <img
                 src="/images/breeze-logo.png"
-                width={28}
-                height={28}
+                width={32}
+                height={32}
                 alt="BreezeBytes"
-                className="object-contain flex-shrink-0"
+                className="object-contain flex-shrink-0 drop-shadow-md"
               />
               {(!collapsed || mobileOpen) && (
-                <span className="font-poppins font-bold text-sm tracking-wider text-p4 truncate">
+                <span className="font-poppins font-bold text-base tracking-wider text-p4 truncate">
                   Breeze<span className="text-p1">Bytes</span>
                 </span>
               )}
@@ -214,36 +214,36 @@ const ServerLayout = () => {
             {/* Collapse Trigger Button (Desktop) */}
             <button
               onClick={() => setCollapsed(!collapsed)}
-              className="hidden lg:flex p-1.5 rounded-lg text-p5 hover:text-p4 hover:bg-s5/60 transition-colors cursor-pointer"
+              className="hidden lg:flex p-2 rounded-xl text-p5 hover:text-p4 hover:bg-s5/60 transition-colors cursor-pointer"
               title={collapsed ? 'Expand Sidebar (Ctrl+B)' : 'Collapse Sidebar (Ctrl+B)'}
             >
-              <PanelLeft size={16} />
+              <PanelLeft size={18} />
             </button>
 
             {/* Close Button (Mobile) */}
             <button
               onClick={() => setMobileOpen(false)}
-              className="lg:hidden p-1.5 rounded-lg text-p5 hover:text-p4 hover:bg-s5/60 transition-colors"
+              className="lg:hidden p-2 rounded-xl text-p5 hover:text-p4 hover:bg-s5/60 transition-colors"
             >
-              <X size={18} />
+              <X size={20} />
             </button>
           </div>
 
           {/* Server Identity Card */}
           {(!collapsed || mobileOpen) ? (
-            <div className="p-2 rounded-xl bg-s1/60 border border-s3/70 flex items-center gap-2.5">
-              <div className="size-8 rounded-lg border border-s3 bg-s2 flex items-center justify-center p-1 flex-shrink-0">
-                <img src="/images/detail-1.png" alt="" className="size-5 object-contain" />
+            <div className="p-3 rounded-2xl bg-s1/70 border border-s3/80 flex items-center gap-3">
+              <div className="size-9 rounded-xl border border-s3 bg-s2 flex items-center justify-center p-1.5 flex-shrink-0 shadow-inner">
+                <img src="/images/detail-1.png" alt="" className="size-6 object-contain" />
               </div>
               <div className="min-w-0 flex-1">
                 <h2 className="text-xs font-bold text-p4 truncate" title={server.name}>
                   {server.name}
                 </h2>
-                <div className="mt-0.5 flex items-center">
+                <div className="mt-1 flex items-center">
                   <BreezeBadge
                     status={status}
                     pulse={isOnline || isStarting}
-                    className="px-1.5 py-0 text-[8px]"
+                    className="px-2 py-0.5 text-[9px]"
                   >
                     {status}
                   </BreezeBadge>
@@ -252,13 +252,13 @@ const ServerLayout = () => {
             </div>
           ) : (
             <div
-              className="size-8 mx-auto rounded-lg border border-s3 bg-s1/80 flex items-center justify-center p-1 relative group cursor-default"
+              className="size-10 mx-auto rounded-xl border border-s3 bg-s1/80 flex items-center justify-center p-1.5 relative group cursor-default"
               title={`${server.name} (${status})`}
             >
-              <img src="/images/detail-1.png" alt="" className="size-5 object-contain" />
+              <img src="/images/detail-1.png" alt="" className="size-6 object-contain" />
               <span
                 className={clsx(
-                  'absolute -top-0.5 -right-0.5 size-2 rounded-full border border-s2',
+                  'absolute -top-0.5 -right-0.5 size-2.5 rounded-full border-2 border-s2',
                   isOnline ? 'bg-emerald-400' : 'bg-p5/40',
                 )}
               />
@@ -266,10 +266,10 @@ const ServerLayout = () => {
           )}
         </div>
 
-        {/* Sidebar Content / Scrollable Menu */}
-        <nav className="flex-1 overflow-y-auto p-2 flex flex-col gap-1">
+        {/* Sidebar Content / Navigation Items */}
+        <nav className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-1.5">
           {(!collapsed || mobileOpen) && (
-            <p className="text-[10px] font-bold text-p5/60 uppercase tracking-wider px-2.5 py-1.5">
+            <p className="caption pl-3 mb-2 text-xs font-bold text-p3">
               Server
             </p>
           )}
@@ -286,19 +286,19 @@ const ServerLayout = () => {
                 to={item.to}
                 title={collapsed && !mobileOpen ? item.label : undefined}
                 className={clsx(
-                  'flex items-center rounded-xl text-xs font-medium transition-colors duration-200 group relative',
+                  'flex items-center rounded-2xl transition-all duration-300 group relative',
                   collapsed && !mobileOpen
-                    ? 'justify-center size-10 mx-auto'
-                    : 'gap-3 px-3 py-2',
+                    ? 'justify-center size-11 mx-auto'
+                    : 'gap-3.5 px-3.5 py-2.5 text-sm font-medium',
                   isActive
-                    ? 'bg-s4/20 text-p1 font-semibold border border-s4/40'
-                    : 'text-p5/80 hover:text-p4 hover:bg-s5/50 border border-transparent',
+                    ? 'bg-s4/20 text-p1 font-semibold border border-s4/40 shadow-sm'
+                    : 'text-p5 hover:text-p4 hover:bg-s5/50 border border-transparent',
                 )}
               >
                 <Icon
-                  size={16}
+                  size={18}
                   className={clsx(
-                    'flex-shrink-0 transition-colors',
+                    'flex-shrink-0 transition-colors duration-300',
                     isActive ? 'text-p1' : 'text-p5/70 group-hover:text-p4',
                   )}
                 />
@@ -309,18 +309,18 @@ const ServerLayout = () => {
         </nav>
 
         {/* Sidebar Footer (Pinned at Bottom) */}
-        <div className="p-2 border-t border-s3/60 bg-s2">
+        <div className="px-3 py-3 border-t-2 border-s3 bg-s2">
           <Link
             to="/panel/servers"
             title={collapsed && !mobileOpen ? 'Back to Servers' : undefined}
             className={clsx(
-              'flex items-center rounded-xl text-xs font-semibold text-p5/80 hover:text-p4 hover:bg-s5/50 border border-transparent transition-colors duration-200',
+              'flex items-center rounded-2xl text-sm font-semibold text-p5 hover:text-p4 hover:bg-s5/50 border border-transparent transition-all duration-300',
               collapsed && !mobileOpen
-                ? 'justify-center size-10 mx-auto'
-                : 'gap-2.5 px-3 py-2',
+                ? 'justify-center size-11 mx-auto'
+                : 'gap-3 px-3.5 py-2.5',
             )}
           >
-            <ArrowLeft size={16} className="text-p1 flex-shrink-0" />
+            <ArrowLeft size={18} className="text-p1 flex-shrink-0" />
             {(!collapsed || mobileOpen) && <span>Back to Servers</span>}
           </Link>
         </div>
@@ -329,7 +329,7 @@ const ServerLayout = () => {
       {/* ===== Main Workspace Content Area ===== */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen">
         {/* Mobile Header Bar (< 1024px) */}
-        <header className="lg:hidden sticky top-0 z-30 bg-s2/95 backdrop-blur-md border-b border-s3/80 px-4 h-14 flex items-center justify-between">
+        <header className="lg:hidden sticky top-0 z-30 bg-s2/95 backdrop-blur-md border-b-2 border-s3 px-4 h-14 flex items-center justify-between">
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="p-2 rounded-xl text-p5 hover:text-p4 hover:bg-s5/50 transition-colors"
@@ -354,84 +354,86 @@ const ServerLayout = () => {
           </Link>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-7 flex flex-col">
-          {/* ===== Server Header ===== */}
-          <div className="border-2 border-s3 rounded-2xl bg-s2 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div className="flex items-center gap-3.5 min-w-0">
-              <div className="size-11 rounded-xl border border-s3 bg-s1 flex items-center justify-center p-1.5 flex-shrink-0">
-                <img src="/images/detail-1.png" alt="" className="size-7 object-contain" />
+        {/* Page Content Centered */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 flex flex-col items-center">
+          <div className="w-full max-w-6xl mx-auto flex flex-col flex-1">
+            {/* ===== Server Header ===== */}
+            <div className="border-2 border-s3 rounded-2xl bg-s2 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <div className="flex items-center gap-3.5 min-w-0">
+                <div className="size-11 rounded-xl border border-s3 bg-s1 flex items-center justify-center p-1.5 flex-shrink-0">
+                  <img src="/images/detail-1.png" alt="" className="size-7 object-contain" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <h1 className="h6 text-p4 truncate font-semibold">{server.name}</h1>
+                    <BreezeBadge status={status} pulse={isOnline || isStarting}>
+                      {status}
+                    </BreezeBadge>
+                  </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-xs text-p5 font-mono truncate">{serverAddress}</p>
+                    {server?.allocation && (
+                      <button
+                        onClick={copyAddress}
+                        className="p-1 rounded-lg text-p5 hover:text-p1 transition-colors duration-300 cursor-pointer"
+                        title="Copy Server Address"
+                      >
+                        {copied ? (
+                          <Check size={13} className="text-emerald-400" />
+                        ) : (
+                          <Copy size={13} />
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <h1 className="h6 text-p4 truncate font-semibold">{server.name}</h1>
-                  <BreezeBadge status={status} pulse={isOnline || isStarting}>
-                    {status}
-                  </BreezeBadge>
-                </div>
-                <div className="flex items-center gap-2 mt-1">
-                  <p className="text-xs text-p5 font-mono truncate">{serverAddress}</p>
-                  {server?.allocation && (
-                    <button
-                      onClick={copyAddress}
-                      className="p-1 rounded-lg text-p5 hover:text-p1 transition-colors duration-300 cursor-pointer"
-                      title="Copy Server Address"
-                    >
-                      {copied ? (
-                        <Check size={13} className="text-emerald-400" />
-                      ) : (
-                        <Copy size={13} />
-                      )}
-                    </button>
-                  )}
-                </div>
+
+              {/* Power Controls */}
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                <BreezeButton
+                  variant="primary"
+                  size="sm"
+                  icon={actionLoading === 'start' ? Loader2 : Play}
+                  onClick={() => handlePower('start')}
+                  disabled={isOnline || isStarting}
+                >
+                  Start
+                </BreezeButton>
+                <BreezeButton
+                  variant="warning"
+                  size="sm"
+                  icon={actionLoading === 'restart' ? Loader2 : RotateCcw}
+                  onClick={() => handlePower('restart')}
+                  disabled={!isOnline}
+                >
+                  Restart
+                </BreezeButton>
+                <BreezeButton
+                  variant="destructive"
+                  size="sm"
+                  icon={actionLoading === 'stop' ? Loader2 : Square}
+                  onClick={() => handlePower('stop')}
+                  disabled={!isOnline && !isStarting}
+                >
+                  Stop
+                </BreezeButton>
+                <BreezeButton
+                  variant="destructive"
+                  size="sm"
+                  icon={actionLoading === 'kill' ? Loader2 : XOctagon}
+                  onClick={() => handlePower('kill')}
+                  disabled={!isOnline && !isStarting && !isStopping}
+                >
+                  Kill
+                </BreezeButton>
               </div>
             </div>
 
-            {/* Power Controls */}
-            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-              <BreezeButton
-                variant="primary"
-                size="sm"
-                icon={actionLoading === 'start' ? Loader2 : Play}
-                onClick={() => handlePower('start')}
-                disabled={isOnline || isStarting}
-              >
-                Start
-              </BreezeButton>
-              <BreezeButton
-                variant="warning"
-                size="sm"
-                icon={actionLoading === 'restart' ? Loader2 : RotateCcw}
-                onClick={() => handlePower('restart')}
-                disabled={!isOnline}
-              >
-                Restart
-              </BreezeButton>
-              <BreezeButton
-                variant="destructive"
-                size="sm"
-                icon={actionLoading === 'stop' ? Loader2 : Square}
-                onClick={() => handlePower('stop')}
-                disabled={!isOnline && !isStarting}
-              >
-                Stop
-              </BreezeButton>
-              <BreezeButton
-                variant="destructive"
-                size="sm"
-                icon={actionLoading === 'kill' ? Loader2 : XOctagon}
-                onClick={() => handlePower('kill')}
-                disabled={!isOnline && !isStarting && !isStopping}
-              >
-                Kill
-              </BreezeButton>
+            {/* ===== Page Content Outlet ===== */}
+            <div className="flex-1 flex flex-col min-w-0 w-full">
+              <Outlet context={{ server, status, fetchServer }} />
             </div>
-          </div>
-
-          {/* ===== Page Content Outlet ===== */}
-          <div className="flex-1 flex flex-col min-w-0">
-            <Outlet context={{ server, status, fetchServer }} />
           </div>
         </main>
       </div>

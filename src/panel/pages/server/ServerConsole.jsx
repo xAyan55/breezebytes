@@ -200,7 +200,7 @@ const ServerConsole = () => {
   const diskPercent = Math.min(100, Math.max(0, (stats.disk / totalDisk) * 100));
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_310px] xl:grid-cols-[minmax(0,1fr)_330px] gap-5 items-start">
+    <div className="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_310px] xl:grid-cols-[minmax(0,1fr)_330px] gap-5 items-start">
       {/* ===== Left: Dominant Console & Terminal Workspace ===== */}
       <div className="flex flex-col gap-4 min-w-0">
         {/* Terminal Box */}
@@ -256,10 +256,10 @@ const ServerConsole = () => {
             </div>
           </div>
 
-          {/* Terminal Screen Output */}
+          {/* Terminal Screen Output (Matches Pterodactyl height) */}
           <div
             ref={terminalEndRef}
-            className="p-4 font-mono text-xs sm:text-[13px] overflow-y-auto min-h-[440px] h-[520px] lg:h-[calc(100vh-330px)] max-h-[700px] flex flex-col gap-1 select-text bg-[#07080c] text-zinc-300 scroll-smooth"
+            className="p-4 font-mono text-xs sm:text-[13px] overflow-y-auto h-[350px] flex flex-col gap-1 select-text bg-[#07080c] text-zinc-300 scroll-smooth"
           >
             {logs.length === 0 ? (
               <div className="my-auto flex flex-col items-center justify-center gap-2 text-center p-6 select-none">

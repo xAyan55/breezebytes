@@ -113,7 +113,7 @@ const ServerSettings = () => {
     : 'Unassigned';
 
   return (
-    <div className="w-full max-w-6xl flex flex-col gap-6">
+    <div className="w-full max-w-5xl mx-auto flex flex-col gap-6">
       {/* Page Heading */}
       <div>
         <h2 className="h6 text-p4 font-semibold">Server Settings</h2>
@@ -126,7 +126,7 @@ const ServerSettings = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left: General Settings (7 cols) */}
         <form onSubmit={handleSave} className="lg:col-span-7 flex flex-col">
-          <BreezeCard className="p-5 sm:p-6 flex flex-col gap-5 shadow-500">
+          <BreezeCard className="p-5 sm:p-6 flex flex-col gap-5">
             <div className="flex items-center justify-between border-b border-s3 pb-3">
               <div className="flex items-center gap-2.5">
                 <Settings size={18} className="text-p1" />
@@ -189,7 +189,7 @@ const ServerSettings = () => {
 
         {/* Right: Server Specifications / Read-only Info (5 cols) */}
         <div className="lg:col-span-5 flex flex-col">
-          <BreezeCard className="p-5 sm:p-6 flex flex-col gap-4 shadow-500">
+          <BreezeCard className="p-5 sm:p-6 flex flex-col gap-4">
             <div className="flex items-center justify-between border-b border-s3 pb-3">
               <div className="flex items-center gap-2.5">
                 <Server size={18} className="text-p1" />
@@ -289,7 +289,7 @@ const ServerSettings = () => {
       </div>
 
       {/* ===== Bottom Section: Reinstall Card ===== */}
-      <BreezeCard className="p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-500">
+      <BreezeCard className="p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h3 className="base-bold text-p4 flex items-center gap-2">
             <RefreshCw size={16} className="text-amber-400" />
@@ -311,7 +311,7 @@ const ServerSettings = () => {
       </BreezeCard>
 
       {/* ===== Bottom Section: Danger Zone Card ===== */}
-      <div className="p-5 sm:p-6 rounded-3xl bg-red-500/5 border-2 border-red-500/30 flex flex-col gap-4 shadow-500">
+      <div className="p-5 sm:p-6 rounded-3xl bg-red-500/5 border-2 border-red-500/30 flex flex-col gap-4">
         <div className="flex items-center gap-2 text-red-400">
           <AlertTriangle size={18} />
           <h3 className="text-xs font-bold uppercase tracking-wider">Danger Zone</h3>
