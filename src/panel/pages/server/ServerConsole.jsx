@@ -204,7 +204,7 @@ const ServerConsole = () => {
       {/* ===== Left: Dominant Console & Terminal Workspace ===== */}
       <div className="flex flex-col gap-4 min-w-0">
         {/* Terminal Box */}
-        <div className="border-2 border-s3 rounded-3xl bg-s1 flex flex-col shadow-500 overflow-hidden min-w-0">
+        <div className="border-2 border-s3 rounded-2xl bg-s1 flex flex-col overflow-hidden min-w-0">
           {/* Terminal Header / Toolbar */}
           <div className="px-4 py-3 bg-s2 border-b-2 border-s3 flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2.5">
@@ -227,9 +227,9 @@ const ServerConsole = () => {
               <button
                 onClick={() => setAutoScroll(!autoScroll)}
                 className={clsx(
-                  'flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold transition-all duration-500 border-2 cursor-pointer',
+                  'flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold transition-all duration-300 border-2 cursor-pointer',
                   autoScroll
-                    ? 'g4 text-p1 border-s4/30 shadow-400'
+                    ? 'bg-s4/20 text-p1 border-s4/40'
                     : 'bg-s1 text-p5 border-s3 hover:text-p4 hover:border-s4',
                 )}
                 title="Toggle Console Auto-Scroll"
@@ -240,7 +240,7 @@ const ServerConsole = () => {
 
               <button
                 onClick={copyConsole}
-                className="p-1.5 rounded-xl text-p5 hover:text-p4 hover:bg-s5/40 border border-transparent hover:border-s3 transition-all duration-500 cursor-pointer"
+                className="p-1.5 rounded-xl text-p5 hover:text-p4 hover:bg-s5/40 border border-transparent hover:border-s3 transition-all duration-300 cursor-pointer"
                 title="Copy Terminal Logs"
               >
                 {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
@@ -248,7 +248,7 @@ const ServerConsole = () => {
 
               <button
                 onClick={clearConsole}
-                className="p-1.5 rounded-xl text-p5 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 transition-all duration-500 cursor-pointer"
+                className="p-1.5 rounded-xl text-p5 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 transition-all duration-300 cursor-pointer"
                 title="Clear Terminal Output"
               >
                 <Trash2 size={14} />
@@ -296,7 +296,7 @@ const ServerConsole = () => {
               value={command}
               onChange={(e) => setCommand(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="flex-1 bg-s1 border-2 border-s3 rounded-2xl px-4 py-2 text-xs font-mono text-p4 placeholder:text-p5/40 focus:outline-none focus:border-s4 transition-all duration-500 disabled:opacity-40"
+              className="flex-1 bg-s1 border-2 border-s3 rounded-xl px-4 py-2 text-xs font-mono text-p4 placeholder:text-p5/40 focus:outline-none focus:border-s4 transition-all duration-300 disabled:opacity-40"
             />
             <BreezeButton
               type="submit"
@@ -313,7 +313,7 @@ const ServerConsole = () => {
         {/* 3 Bottom Summary Stats (Pterodactyl Architecture) */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Bottom CPU */}
-          <div className="border-2 border-s3 rounded-2xl bg-s2/90 p-3.5 flex flex-col gap-1.5 shadow-500">
+          <div className="border-2 border-s3 rounded-xl bg-s2 p-3.5 flex flex-col gap-1.5">
             <span className="text-[11px] font-semibold text-p5/70 uppercase tracking-wider flex items-center gap-1.5">
               <Cpu size={13} className="text-p1" />
               <span>CPU Load</span>
@@ -326,14 +326,14 @@ const ServerConsole = () => {
             </div>
             <div className="w-full bg-s3 rounded-full h-1 overflow-hidden mt-0.5">
               <div
-                className="bg-gradient-to-r from-p2 to-p1 h-full rounded-full transition-all duration-500"
+                className="bg-gradient-to-r from-p2 to-p1 h-full rounded-full transition-all duration-300"
                 style={{ width: `${cpuPercent}%` }}
               />
             </div>
           </div>
 
           {/* Bottom Memory */}
-          <div className="border-2 border-s3 rounded-2xl bg-s2/90 p-3.5 flex flex-col gap-1.5 shadow-500">
+          <div className="border-2 border-s3 rounded-xl bg-s2 p-3.5 flex flex-col gap-1.5">
             <span className="text-[11px] font-semibold text-p5/70 uppercase tracking-wider flex items-center gap-1.5">
               <Layers size={13} className="text-p1" />
               <span>Memory</span>
@@ -346,14 +346,14 @@ const ServerConsole = () => {
             </div>
             <div className="w-full bg-s3 rounded-full h-1 overflow-hidden mt-0.5">
               <div
-                className="bg-gradient-to-r from-p2 to-p1 h-full rounded-full transition-all duration-500"
+                className="bg-gradient-to-r from-p2 to-p1 h-full rounded-full transition-all duration-300"
                 style={{ width: `${memoryPercent}%` }}
               />
             </div>
           </div>
 
           {/* Bottom Disk */}
-          <div className="border-2 border-s3 rounded-2xl bg-s2/90 p-3.5 flex flex-col gap-1.5 shadow-500">
+          <div className="border-2 border-s3 rounded-xl bg-s2 p-3.5 flex flex-col gap-1.5">
             <span className="text-[11px] font-semibold text-p5/70 uppercase tracking-wider flex items-center gap-1.5">
               <HardDrive size={13} className="text-p1" />
               <span>Disk</span>
@@ -366,7 +366,7 @@ const ServerConsole = () => {
             </div>
             <div className="w-full bg-s3 rounded-full h-1 overflow-hidden mt-0.5">
               <div
-                className="bg-gradient-to-r from-p2 to-p1 h-full rounded-full transition-all duration-500"
+                className="bg-gradient-to-r from-p2 to-p1 h-full rounded-full transition-all duration-300"
                 style={{ width: `${diskPercent}%` }}
               />
             </div>
@@ -377,7 +377,7 @@ const ServerConsole = () => {
       {/* ===== Right: Pterodactyl-Inspired Stack of Resource Cards ===== */}
       <div className="flex flex-col gap-2.5 min-w-0">
         {/* Card 1: Address */}
-        <div className="border-2 border-s3 rounded-2xl bg-s2/90 p-3 flex items-center justify-between gap-3 shadow-500 hover:border-s4 transition-all duration-300 group">
+        <div className="border-2 border-s3 rounded-xl bg-s2 p-3 flex items-center justify-between gap-3 hover:border-s4/60 transition-colors duration-300 group">
           <div className="flex items-center gap-3 min-w-0">
             <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 flex-shrink-0">
               <Wifi size={17} />
@@ -403,7 +403,7 @@ const ServerConsole = () => {
         </div>
 
         {/* Card 2: Uptime */}
-        <div className="border-2 border-s3 rounded-2xl bg-s2/90 p-3 flex items-center gap-3 shadow-500 hover:border-s4 transition-all duration-300">
+        <div className="border-2 border-s3 rounded-xl bg-s2 p-3 flex items-center gap-3 hover:border-s4/60 transition-colors duration-300">
           <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 flex-shrink-0">
             <Clock size={17} />
           </div>
@@ -426,7 +426,7 @@ const ServerConsole = () => {
         </div>
 
         {/* Card 3: CPU Load */}
-        <div className="border-2 border-s3 rounded-2xl bg-s2/90 p-3 flex items-center gap-3 shadow-500 hover:border-s4 transition-all duration-300">
+        <div className="border-2 border-s3 rounded-xl bg-s2 p-3 flex items-center gap-3 hover:border-s4/60 transition-colors duration-300">
           <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 flex-shrink-0">
             <Cpu size={17} />
           </div>
@@ -442,7 +442,7 @@ const ServerConsole = () => {
         </div>
 
         {/* Card 4: Memory */}
-        <div className="border-2 border-s3 rounded-2xl bg-s2/90 p-3 flex items-center gap-3 shadow-500 hover:border-s4 transition-all duration-300">
+        <div className="border-2 border-s3 rounded-xl bg-s2 p-3 flex items-center gap-3 hover:border-s4/60 transition-colors duration-300">
           <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 flex-shrink-0">
             <Activity size={17} />
           </div>
@@ -458,7 +458,7 @@ const ServerConsole = () => {
         </div>
 
         {/* Card 5: Disk */}
-        <div className="border-2 border-s3 rounded-2xl bg-s2/90 p-3 flex items-center gap-3 shadow-500 hover:border-s4 transition-all duration-300">
+        <div className="border-2 border-s3 rounded-xl bg-s2 p-3 flex items-center gap-3 hover:border-s4/60 transition-colors duration-300">
           <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 flex-shrink-0">
             <HardDrive size={17} />
           </div>
@@ -474,7 +474,7 @@ const ServerConsole = () => {
         </div>
 
         {/* Card 6: Network Allocation */}
-        <div className="border-2 border-s3 rounded-2xl bg-s2/90 p-3 flex items-center gap-3 shadow-500 hover:border-s4 transition-all duration-300">
+        <div className="border-2 border-s3 rounded-xl bg-s2 p-3 flex items-center gap-3 hover:border-s4/60 transition-colors duration-300">
           <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 flex-shrink-0">
             <Network size={17} />
           </div>
@@ -489,7 +489,7 @@ const ServerConsole = () => {
         </div>
 
         {/* Card 7: Node / Host */}
-        <div className="border-2 border-s3 rounded-2xl bg-s2/90 p-3 flex items-center gap-3 shadow-500 hover:border-s4 transition-all duration-300">
+        <div className="border-2 border-s3 rounded-xl bg-s2 p-3 flex items-center gap-3 hover:border-s4/60 transition-colors duration-300">
           <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 flex-shrink-0">
             <Server size={17} />
           </div>

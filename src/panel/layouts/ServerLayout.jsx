@@ -23,6 +23,7 @@ import {
   ArrowLeft,
   Menu,
   X,
+  PanelLeft,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -37,11 +38,39 @@ const ServerLayout = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [copied, setCopied] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('bb_sidebar_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  // Save collapsed preference
+  useEffect(() => {
+    try {
+      localStorage.setItem('bb_sidebar_collapsed', String(collapsed));
+    } catch {
+      // ignore
+    }
+  }, [collapsed]);
+
+  // Keyboard shortcut Ctrl+B / Cmd+B to toggle sidebar
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        setCollapsed((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Close mobile sidebar on route change
   useEffect(() => {
-    setSidebarOpen(false);
+    setMobileOpen(false);
   }, [location.pathname]);
 
   const fetchServer = useCallback(async () => {
@@ -140,67 +169,111 @@ const ServerLayout = () => {
 
   return (
     <div className="min-h-screen bg-s1 flex">
-      {/* ===== Mobile Sidebar Backdrop ===== */}
-      {sidebarOpen && (
+      {/* ===== Mobile Backdrop ===== */}
+      {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden"
+          onClick={() => setMobileOpen(false)}
         />
       )}
 
-      {/* ===== Dedicated Server Sidebar ===== */}
+      {/* ===== Dedicated Server Sidebar (shadcn Composable Architecture) ===== */}
       <aside
+        data-collapsed={collapsed}
         className={clsx(
-          'fixed top-0 left-0 bottom-0 w-[240px] bg-s2 border-r-2 border-s3 flex flex-col z-50 transition-transform duration-500',
-          'lg:translate-x-0 lg:static lg:z-auto',
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+          'fixed top-0 left-0 bottom-0 bg-s2 border-r border-s3/80 flex flex-col z-50 transition-all duration-300 ease-in-out',
+          'lg:static lg:z-auto',
+          collapsed ? 'lg:w-[68px]' : 'lg:w-[240px]',
+          mobileOpen ? 'translate-x-0 w-[240px]' : '-translate-x-full lg:translate-x-0',
         )}
       >
-        {/* Top Branding */}
-        <div className="p-5 pb-3">
-          <Link
-            to="/panel"
-            className="flex items-center gap-2.5 group transition-transform duration-500 hover:scale-[1.02]"
-          >
-            <img
-              src="/images/breeze-logo.png"
-              width={32}
-              height={32}
-              alt="BreezeBytes"
-              className="object-contain drop-shadow-md"
-            />
-            <span className="font-poppins font-bold text-base tracking-wider text-p4">
-              Breeze<span className="text-p1">Bytes</span>
-            </span>
-          </Link>
-        </div>
+        {/* Sidebar Header */}
+        <div className="p-3.5 border-b border-s3/60 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <Link
+              to="/panel"
+              className={clsx(
+                'flex items-center gap-2.5 group transition-transform duration-300 hover:scale-[1.02] min-w-0',
+                collapsed && 'lg:mx-auto',
+              )}
+            >
+              <img
+                src="/images/breeze-logo.png"
+                width={28}
+                height={28}
+                alt="BreezeBytes"
+                className="object-contain flex-shrink-0"
+              />
+              {(!collapsed || mobileOpen) && (
+                <span className="font-poppins font-bold text-sm tracking-wider text-p4 truncate">
+                  Breeze<span className="text-p1">Bytes</span>
+                </span>
+              )}
+            </Link>
 
-        {/* Server Identity Badge (Compact) */}
-        <div className="px-4 py-2">
-          <div className="p-3 rounded-2xl bg-s1/60 border border-s3/80 flex items-center gap-3">
-            <div className="size-9 rounded-xl border border-s3 bg-s2 flex items-center justify-center p-1.5 flex-shrink-0 shadow-inner">
-              <img src="/images/detail-1.png" alt="" className="size-6 object-contain" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h2 className="text-xs font-bold text-p4 truncate" title={server.name}>
-                {server.name}
-              </h2>
-              <div className="mt-1 flex items-center">
-                <BreezeBadge
-                  status={status}
-                  pulse={isOnline || isStarting}
-                  className="px-2 py-0.5 text-[9px]"
-                >
-                  {status}
-                </BreezeBadge>
+            {/* Collapse Trigger Button (Desktop) */}
+            <button
+              onClick={() => setCollapsed(!collapsed)}
+              className="hidden lg:flex p-1.5 rounded-lg text-p5 hover:text-p4 hover:bg-s5/60 transition-colors cursor-pointer"
+              title={collapsed ? 'Expand Sidebar (Ctrl+B)' : 'Collapse Sidebar (Ctrl+B)'}
+            >
+              <PanelLeft size={16} />
+            </button>
+
+            {/* Close Button (Mobile) */}
+            <button
+              onClick={() => setMobileOpen(false)}
+              className="lg:hidden p-1.5 rounded-lg text-p5 hover:text-p4 hover:bg-s5/60 transition-colors"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Server Identity Card */}
+          {(!collapsed || mobileOpen) ? (
+            <div className="p-2 rounded-xl bg-s1/60 border border-s3/70 flex items-center gap-2.5">
+              <div className="size-8 rounded-lg border border-s3 bg-s2 flex items-center justify-center p-1 flex-shrink-0">
+                <img src="/images/detail-1.png" alt="" className="size-5 object-contain" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-xs font-bold text-p4 truncate" title={server.name}>
+                  {server.name}
+                </h2>
+                <div className="mt-0.5 flex items-center">
+                  <BreezeBadge
+                    status={status}
+                    pulse={isOnline || isStarting}
+                    className="px-1.5 py-0 text-[8px]"
+                  >
+                    {status}
+                  </BreezeBadge>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div
+              className="size-8 mx-auto rounded-lg border border-s3 bg-s1/80 flex items-center justify-center p-1 relative group cursor-default"
+              title={`${server.name} (${status})`}
+            >
+              <img src="/images/detail-1.png" alt="" className="size-5 object-contain" />
+              <span
+                className={clsx(
+                  'absolute -top-0.5 -right-0.5 size-2 rounded-full border border-s2',
+                  isOnline ? 'bg-emerald-400' : 'bg-p5/40',
+                )}
+              />
+            </div>
+          )}
         </div>
 
-        {/* Server Navigation Links */}
-        <nav className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-1">
-          <p className="caption pl-3 mb-2 text-[11px]">Server</p>
+        {/* Sidebar Content / Scrollable Menu */}
+        <nav className="flex-1 overflow-y-auto p-2 flex flex-col gap-1">
+          {(!collapsed || mobileOpen) && (
+            <p className="text-[10px] font-bold text-p5/60 uppercase tracking-wider px-2.5 py-1.5">
+              Server
+            </p>
+          )}
+
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = item.matchExact
@@ -211,48 +284,58 @@ const ServerLayout = () => {
               <Link
                 key={item.to}
                 to={item.to}
+                title={collapsed && !mobileOpen ? item.label : undefined}
                 className={clsx(
-                  'flex items-center gap-3 px-3 py-2 rounded-2xl text-xs font-medium transition-all duration-500 group',
+                  'flex items-center rounded-xl text-xs font-medium transition-colors duration-200 group relative',
+                  collapsed && !mobileOpen
+                    ? 'justify-center size-10 mx-auto'
+                    : 'gap-3 px-3 py-2',
                   isActive
-                    ? 'bg-s4/15 text-p1 border border-s4/30 shadow-400 font-semibold'
-                    : 'text-p5 hover:text-p4 hover:bg-s5/40 border border-transparent',
+                    ? 'bg-s4/20 text-p1 font-semibold border border-s4/40'
+                    : 'text-p5/80 hover:text-p4 hover:bg-s5/50 border border-transparent',
                 )}
               >
                 <Icon
                   size={16}
                   className={clsx(
-                    'flex-shrink-0 transition-colors duration-500',
-                    isActive ? 'text-p1' : 'text-p5 group-hover:text-p4',
+                    'flex-shrink-0 transition-colors',
+                    isActive ? 'text-p1' : 'text-p5/70 group-hover:text-p4',
                   )}
                 />
-                <span>{item.label}</span>
+                {(!collapsed || mobileOpen) && <span className="truncate">{item.label}</span>}
               </Link>
             );
           })}
         </nav>
 
-        {/* Pinned Bottom Navigation Action: Back to Servers */}
-        <div className="px-4 py-4 border-t-2 border-s3 bg-s2">
+        {/* Sidebar Footer (Pinned at Bottom) */}
+        <div className="p-2 border-t border-s3/60 bg-s2">
           <Link
             to="/panel/servers"
-            className="flex items-center gap-2.5 px-3 py-2 rounded-2xl text-xs font-semibold text-p5 hover:text-p4 hover:bg-s5/40 border border-transparent transition-all duration-500"
+            title={collapsed && !mobileOpen ? 'Back to Servers' : undefined}
+            className={clsx(
+              'flex items-center rounded-xl text-xs font-semibold text-p5/80 hover:text-p4 hover:bg-s5/50 border border-transparent transition-colors duration-200',
+              collapsed && !mobileOpen
+                ? 'justify-center size-10 mx-auto'
+                : 'gap-2.5 px-3 py-2',
+            )}
           >
             <ArrowLeft size={16} className="text-p1 flex-shrink-0" />
-            <span>Back to Servers</span>
+            {(!collapsed || mobileOpen) && <span>Back to Servers</span>}
           </Link>
         </div>
       </aside>
 
-      {/* ===== Main Server Content Area ===== */}
+      {/* ===== Main Workspace Content Area ===== */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen">
-        {/* Mobile Header Bar */}
-        <header className="lg:hidden sticky top-0 z-30 bg-s2/95 backdrop-blur-md border-b-2 border-s3 px-4 h-14 flex items-center justify-between">
+        {/* Mobile Header Bar (< 1024px) */}
+        <header className="lg:hidden sticky top-0 z-30 bg-s2/95 backdrop-blur-md border-b border-s3/80 px-4 h-14 flex items-center justify-between">
           <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 rounded-2xl text-p5 hover:text-p4 hover:bg-s5/40 transition-all duration-500 border border-transparent"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="p-2 rounded-xl text-p5 hover:text-p4 hover:bg-s5/50 transition-colors"
             aria-label="Toggle Server Navigation"
           >
-            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
 
           <div className="flex items-center gap-2 truncate max-w-[200px]">
@@ -264,20 +347,20 @@ const ServerLayout = () => {
 
           <Link
             to="/panel/servers"
-            className="p-1.5 rounded-xl text-p5 hover:text-p4 hover:bg-s5/40 transition-colors"
+            className="p-1.5 rounded-xl text-p5 hover:text-p4 hover:bg-s5/50 transition-colors"
             title="Back to Servers"
           >
             <ArrowLeft size={18} />
           </Link>
         </header>
 
-        {/* Page Content & Server Header */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 flex flex-col">
+        {/* Page Content */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-7 flex flex-col">
           {/* ===== Server Header ===== */}
-          <div className="border-2 border-s3 rounded-3xl g7 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-500 mb-6">
+          <div className="border-2 border-s3 rounded-2xl bg-s2 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-3.5 min-w-0">
-              <div className="size-12 rounded-2xl border-2 border-s2 bg-s1 flex items-center justify-center p-2 shadow-500 flex-shrink-0">
-                <img src="/images/detail-1.png" alt="" className="size-8 object-contain" />
+              <div className="size-11 rounded-xl border border-s3 bg-s1 flex items-center justify-center p-1.5 flex-shrink-0">
+                <img src="/images/detail-1.png" alt="" className="size-7 object-contain" />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-3 flex-wrap">
@@ -291,7 +374,7 @@ const ServerLayout = () => {
                   {server?.allocation && (
                     <button
                       onClick={copyAddress}
-                      className="p-1 rounded-lg text-p5 hover:text-p1 transition-colors duration-500 cursor-pointer"
+                      className="p-1 rounded-lg text-p5 hover:text-p1 transition-colors duration-300 cursor-pointer"
                       title="Copy Server Address"
                     >
                       {copied ? (

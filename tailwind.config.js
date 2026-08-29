@@ -24,7 +24,7 @@ export default {
         200: '0px 4px 4px rgba(0, 0, 0, 0.25), 0px 16px 24px rgba(0, 0, 0, 0.25), inset 0px 4px 10px #c5a6ff',
         300: '0px 4px 4px rgba(0, 0, 0, 0.25), 0px 16px 24px rgba(0, 0, 0, 0.25), inset 0px 3px 6px #5a4585',
         400: 'inset 0px 2px 4px 0 rgba(255, 255, 255, 0.05)',
-        500: '0px 16px 24px rgba(0, 0, 0, 0.25), 0px -14px 48px rgba(78, 56, 120, 0.45)',
+        500: '0px 10px 24px rgba(0, 0, 0, 0.4), 0px 4px 8px rgba(0, 0, 0, 0.3)',
       },
       fontFamily: {
         inter: ['Inter', 'sans-serif'],
