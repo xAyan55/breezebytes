@@ -25,7 +25,8 @@ import {
 import clsx from 'clsx';
 
 const ServerLayout = () => {
-  const { serverId } = useParams();
+  const { id, serverId } = useParams();
+  const effectiveId = id || serverId;
   const navigate = useNavigate();
   const { subscribe } = useSocket();
   const [server, setServer] = useState(null);
@@ -35,11 +36,17 @@ const ServerLayout = () => {
   const [copied, setCopied] = useState(false);
 
   const fetchServer = useCallback(async () => {
+    if (!effectiveId) {
+      navigate('/panel/servers');
+      return;
+    }
     try {
-      const res = await api.get(`/servers/${serverId}`);
+      const res = await api.get(`/servers/${effectiveId}`);
       if (res.success && res.data) {
         setServer(res.data);
         setStatus(res.data.status || 'offline');
+      } else {
+        navigate('/panel/servers');
       }
     } catch (err) {
       console.error('Failed to load server:', err);
@@ -47,7 +54,7 @@ const ServerLayout = () => {
     } finally {
       setLoading(false);
     }
-  }, [serverId, navigate]);
+  }, [effectiveId, navigate]);
 
   useEffect(() => {
     fetchServer();
@@ -200,7 +207,7 @@ const ServerLayout = () => {
             return (
               <NavLink
                 key={tab.to}
-                to={`/panel/servers/${serverId}/${tab.to}`}
+                to={`/panel/servers/${effectiveId}/${tab.to}`}
                 className={({ isActive }) =>
                   clsx(
                     'flex items-center gap-2 px-3 py-2 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all duration-500',
