@@ -112,12 +112,12 @@ const Dashboard = () => {
             {servers.slice(0, 6).map((s) => (
               <Link key={s.id} to={`/panel/servers/${s.id}/console`}>
                 <BreezeCard hover className="relative p-5 flex flex-col justify-between gap-4 h-full overflow-hidden group">
-                  {/* Background Banner with Low Opacity Smooth Gradient Blend */}
+                  {/* Background Banner with Enhanced Opacity & Smooth Gradient Blend */}
                   <div
-                    className="absolute inset-0 bg-cover bg-center opacity-20 group-hover:opacity-35 transition-opacity duration-500 pointer-events-none"
+                    className="absolute inset-0 bg-cover bg-center opacity-55 group-hover:opacity-75 transition-opacity duration-500 pointer-events-none"
                     style={{ backgroundImage: "url('/images/banners/server-card-bg.jpeg')" }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-s2 via-s2/85 to-s2/50 pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-s2/95 via-s2/75 to-s2/30 pointer-events-none" />
 
                   {/* Card Content on Top */}
                   <div className="relative z-10 flex items-start justify-between gap-3">
