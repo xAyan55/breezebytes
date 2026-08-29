@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../../services/api.js';
+import BreezeCard from '../../../components/ui/BreezeCard.jsx';
+import BreezeButton from '../../../components/ui/BreezeButton.jsx';
+import BreezeModal from '../../../components/ui/BreezeModal.jsx';
+import BreezeInput from '../../../components/ui/BreezeInput.jsx';
+import BreezePageHeader from '../../../components/ui/BreezePageHeader.jsx';
+import BreezeBadge from '../../../components/ui/BreezeBadge.jsx';
 import { Network, PlusCircle, Trash2, Loader2 } from 'lucide-react';
 
 const AdminAllocations = () => {
@@ -55,22 +61,23 @@ const AdminAllocations = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="p-4 rounded-2xl bg-[#11141e] border border-[#222638] flex items-center justify-between shadow-lg">
-        <div>
-          <h1 className="text-xl font-bold text-p4">Port Allocation Pool</h1>
-          <p className="text-xs text-p5">Assign IP/Port combinations available for Minecraft servers.</p>
-        </div>
-
-        <button
+      <BreezePageHeader
+        caption="Administration"
+        title="Port Allocation Pool"
+        description="Assign IP/Port combinations available for Minecraft servers."
+        icon={Network}
+      >
+        <BreezeButton
+          variant="primary"
+          size="md"
+          icon={PlusCircle}
           onClick={() => setModalOpen(true)}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-p1 text-black font-bold text-xs hover:bg-p1/90 shadow-md shadow-p1/20 transition-all"
         >
-          <PlusCircle size={15} />
-          <span>Create Allocations</span>
-        </button>
-      </div>
+          Create Allocations
+        </BreezeButton>
+      </BreezePageHeader>
 
-      <div className="rounded-2xl bg-[#11141e] border border-[#222638] overflow-hidden shadow-xl">
+      <BreezeCard className="overflow-hidden">
         {loading ? (
           <div className="flex justify-center py-12 text-p5">
             <Loader2 className="animate-spin text-p1 size-8" />
@@ -79,7 +86,7 @@ const AdminAllocations = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs font-mono">
               <thead>
-                <tr className="border-b border-[#222638] bg-[#08090d] text-p5 font-sans font-semibold uppercase">
+                <tr className="border-b-2 border-s3 bg-s1 text-p5 font-sans font-semibold uppercase tracking-wider small-compact">
                   <th className="py-3.5 px-4">Node</th>
                   <th className="py-3.5 px-4">IP Address</th>
                   <th className="py-3.5 px-4">Port</th>
@@ -87,17 +94,17 @@ const AdminAllocations = () => {
                   <th className="py-3.5 px-4 text-right font-sans">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#222638]/60">
+              <tbody className="divide-y divide-s3/60">
                 {allocations.map((a) => (
-                  <tr key={a.id} className="hover:bg-s2/30">
+                  <tr key={a.id} className="hover:bg-s5/30 transition-colors duration-500">
                     <td className="py-3 px-4 text-p4 font-sans font-semibold">{a.nodeName}</td>
                     <td className="py-3 px-4 text-p5">{a.ip}</td>
                     <td className="py-3 px-4 font-bold text-p1">{a.port}</td>
                     <td className="py-3 px-4 font-sans">
                       {a.serverName ? (
-                        <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-p1/10 text-p1 border border-p1/30">
+                        <BreezeBadge status="default" dot={false}>
                           {a.serverName}
-                        </span>
+                        </BreezeBadge>
                       ) : (
                         <span className="text-emerald-400 text-xs font-semibold">Available</span>
                       )}
@@ -106,7 +113,7 @@ const AdminAllocations = () => {
                       {!a.server_id && (
                         <button
                           onClick={() => handleDelete(a.id)}
-                          className="p-1.5 rounded-lg text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                          className="p-1.5 rounded-xl text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors duration-500"
                         >
                           <Trash2 size={15} />
                         </button>
@@ -118,82 +125,71 @@ const AdminAllocations = () => {
             </table>
           </div>
         )}
-      </div>
+      </BreezeCard>
 
       {/* New Allocations Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#11141e] border border-[#222638] rounded-2xl p-6 max-w-md w-full shadow-2xl">
-            <h3 className="text-base font-bold text-p4 mb-4">Bulk Create Port Allocations</h3>
-            <form onSubmit={handleCreate} className="flex flex-col gap-4">
-              <div>
-                <label className="block text-[11px] font-semibold text-p5 uppercase mb-1">Target Node</label>
-                <select
-                  value={formData.node_id}
-                  onChange={(e) => setFormData({ ...formData, node_id: e.target.value })}
-                  className="w-full bg-[#08090d] border border-[#222638] rounded-xl px-4 py-2 text-xs text-p4 focus:outline-none focus:border-p1"
-                >
-                  {nodes.map((n) => (
-                    <option key={n.id} value={n.id}>
-                      {n.name} ({n.fqdn})
-                    </option>
-                  ))}
-                </select>
-              </div>
+      <BreezeModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title="Bulk Create Port Allocations"
+      >
+        <form onSubmit={handleCreate} className="flex flex-col gap-4">
+          <BreezeInput
+            label="Target Node"
+            type="select"
+            value={formData.node_id}
+            onChange={(e) => setFormData({ ...formData, node_id: e.target.value })}
+          >
+            {nodes.map((n) => (
+              <option key={n.id} value={n.id}>
+                {n.name} ({n.fqdn})
+              </option>
+            ))}
+          </BreezeInput>
 
-              <div>
-                <label className="block text-[11px] font-semibold text-p5 uppercase mb-1">IP Address</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.ip}
-                  onChange={(e) => setFormData({ ...formData, ip: e.target.value })}
-                  className="w-full bg-[#08090d] border border-[#222638] rounded-xl px-4 py-2 text-xs text-p4 font-mono focus:outline-none focus:border-p1"
-                />
-              </div>
+          <BreezeInput
+            label="IP Address"
+            type="text"
+            required
+            value={formData.ip}
+            onChange={(e) => setFormData({ ...formData, ip: e.target.value })}
+            inputClassName="font-mono"
+          />
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-semibold text-p5 uppercase mb-1">Start Port</label>
-                  <input
-                    type="number"
-                    required
-                    value={formData.start_port}
-                    onChange={(e) => setFormData({ ...formData, start_port: e.target.value })}
-                    className="w-full bg-[#08090d] border border-[#222638] rounded-xl px-4 py-2 text-xs text-p4 font-mono focus:outline-none focus:border-p1"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-semibold text-p5 uppercase mb-1">End Port</label>
-                  <input
-                    type="number"
-                    required
-                    value={formData.end_port}
-                    onChange={(e) => setFormData({ ...formData, end_port: e.target.value })}
-                    className="w-full bg-[#08090d] border border-[#222638] rounded-xl px-4 py-2 text-xs text-p4 font-mono focus:outline-none focus:border-p1"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 mt-2">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs text-p5 hover:text-p4"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl bg-p1 text-black font-bold text-xs hover:bg-p1/90"
-                >
-                  Create Ports
-                </button>
-              </div>
-            </form>
+          <div className="grid grid-cols-2 gap-3">
+            <BreezeInput
+              label="Start Port"
+              type="number"
+              required
+              value={formData.start_port}
+              onChange={(e) => setFormData({ ...formData, start_port: e.target.value })}
+              inputClassName="font-mono"
+            />
+            <BreezeInput
+              label="End Port"
+              type="number"
+              required
+              value={formData.end_port}
+              onChange={(e) => setFormData({ ...formData, end_port: e.target.value })}
+              inputClassName="font-mono"
+            />
           </div>
-        </div>
-      )}
+
+          <div className="flex justify-end gap-2 mt-2">
+            <BreezeButton
+              variant="ghost"
+              size="md"
+              type="button"
+              onClick={() => setModalOpen(false)}
+            >
+              Cancel
+            </BreezeButton>
+            <BreezeButton variant="primary" size="md" type="submit">
+              Create Ports
+            </BreezeButton>
+          </div>
+        </form>
+      </BreezeModal>
     </div>
   );
 };

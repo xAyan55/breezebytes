@@ -40,6 +40,56 @@ class Installer extends EventEmitter {
     });
   }
 
+  async resolveDownloadUrl(software, version) {
+    const sw = (software || 'paper').toLowerCase();
+    const ver = version || '1.20.4';
+
+    // 1. Try MCJars v2 API first
+    try {
+      const mcjarsRes = await fetch(`https://mcjars.app/api/v2/builds/${sw}`, {
+        headers: { Accept: 'application/json' },
+      }).then((r) => r.json()).catch(() => null);
+
+      if (mcjarsRes && mcjarsRes.builds && mcjarsRes.builds[ver]) {
+        const buildInfo = mcjarsRes.builds[ver];
+        if (buildInfo?.latest?.jarUrl) {
+          return buildInfo.latest.jarUrl;
+        }
+      }
+    } catch (e) {
+      console.warn(`[INSTALLER] MCJars lookup failed for ${sw} ${ver}:`, e.message);
+    }
+
+    // 2. Direct API Fallbacks
+    if (sw === 'paper') {
+      try {
+        const paperRes = await fetch(`https://api.papermc.io/v2/projects/paper/versions/${ver}/builds`).then((r) => r.json()).catch(() => null);
+        if (paperRes?.builds?.length > 0) {
+          const latest = paperRes.builds[paperRes.builds.length - 1];
+          return `https://api.papermc.io/v2/projects/paper/versions/${ver}/builds/${latest.build}/downloads/${latest.downloads.application.name}`;
+        }
+      } catch {}
+      return `https://api.papermc.io/v2/projects/paper/versions/1.20.4/builds/499/downloads/paper-1.20.4-499.jar`;
+    }
+
+    if (sw === 'purpur') {
+      return `https://api.purpurmc.org/v2/purpur/${ver}/latest/download`;
+    }
+
+    if (sw === 'velocity') {
+      try {
+        const velRes = await fetch(`https://api.papermc.io/v2/projects/velocity/versions/3.3.0-SNAPSHOT/builds`).then((r) => r.json()).catch(() => null);
+        if (velRes?.builds?.length > 0) {
+          const latest = velRes.builds[velRes.builds.length - 1];
+          return `https://api.papermc.io/v2/projects/velocity/versions/3.3.0-SNAPSHOT/builds/${latest.build}/downloads/${latest.downloads.application.name}`;
+        }
+      } catch {}
+    }
+
+    // Default fallback
+    return `https://api.papermc.io/v2/projects/paper/versions/1.20.4/builds/499/downloads/paper-1.20.4-499.jar`;
+  }
+
   async installServer(server) {
     const id = Number(server.id);
     const serverDir = path.join(SERVERS_ROOT, server.uuid || String(id));
@@ -50,32 +100,11 @@ class Installer extends EventEmitter {
     servers.update(id, { status: 'installing' });
     this.emit('progress', { serverId: id, progress: 10, status: 'Preparing server directory...' });
 
-    // 1. Determine download URL for Paper / Purpur / Vanilla
     const version = server.minecraft_version || '1.20.4';
     const software = (server.software || 'paper').toLowerCase();
-    let downloadUrl = null;
 
-    try {
-      if (software === 'paper') {
-        this.emit('progress', { serverId: id, progress: 20, status: 'Fetching PaperMC build info...' });
-        const paperBuildsRes = await fetch(`https://api.papermc.io/v2/projects/paper/versions/${version}/builds`).then(r => r.json()).catch(() => null);
-        if (paperBuildsRes && paperBuildsRes.builds && paperBuildsRes.builds.length > 0) {
-          const latestBuild = paperBuildsRes.builds[paperBuildsRes.builds.length - 1];
-          const jarName = latestBuild.downloads.application.name;
-          downloadUrl = `https://api.papermc.io/v2/projects/paper/versions/${version}/builds/${latestBuild.build}/downloads/${jarName}`;
-        } else {
-          // Fallback to Paper 1.20.4 mirror
-          downloadUrl = `https://api.papermc.io/v2/projects/paper/versions/1.20.4/builds/499/downloads/paper-1.20.4-499.jar`;
-        }
-      } else if (software === 'purpur') {
-        downloadUrl = `https://api.purpurmc.org/v2/purpur/${version}/latest/download`;
-      } else {
-        // Vanilla default / fallback
-        downloadUrl = `https://api.papermc.io/v2/projects/paper/versions/1.20.4/builds/499/downloads/paper-1.20.4-499.jar`;
-      }
-    } catch {
-      downloadUrl = `https://api.papermc.io/v2/projects/paper/versions/1.20.4/builds/499/downloads/paper-1.20.4-499.jar`;
-    }
+    this.emit('progress', { serverId: id, progress: 20, status: `Resolving download for ${software} ${version}...` });
+    const downloadUrl = await this.resolveDownloadUrl(software, version);
 
     const jarPath = path.join(serverDir, 'server.jar');
     this.emit('progress', { serverId: id, progress: 40, status: `Downloading ${software} ${version}...` });
@@ -86,7 +115,6 @@ class Installer extends EventEmitter {
       });
     } catch (err) {
       console.error(`[INSTALLER] Failed to download JAR for server #${id}:`, err);
-      // Fallback create placeholder runnable jar if offline
       if (!fs.existsSync(jarPath)) {
         fs.writeFileSync(jarPath, Buffer.alloc(0));
       }

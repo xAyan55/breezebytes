@@ -1,6 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../../services/api.js';
-import { Users, PlusCircle, Trash2, Shield, UserX, UserCheck, Loader2 } from 'lucide-react';
+import BreezeCard from '../../../components/ui/BreezeCard.jsx';
+import BreezeButton from '../../../components/ui/BreezeButton.jsx';
+import BreezeModal from '../../../components/ui/BreezeModal.jsx';
+import BreezeInput from '../../../components/ui/BreezeInput.jsx';
+import BreezePageHeader from '../../../components/ui/BreezePageHeader.jsx';
+import BreezeBadge from '../../../components/ui/BreezeBadge.jsx';
+import { Users, PlusCircle, Trash2, UserX, UserCheck, Loader2 } from 'lucide-react';
 
 const AdminUsers = () => {
   const [users, setUsers] = useState([]);
@@ -68,22 +74,23 @@ const AdminUsers = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="p-4 rounded-2xl bg-[#11141e] border border-[#222638] flex items-center justify-between shadow-lg">
-        <div>
-          <h1 className="text-xl font-bold text-p4">User Management</h1>
-          <p className="text-xs text-p5">Control user accounts, administrative privileges, and suspensions.</p>
-        </div>
-
-        <button
+      <BreezePageHeader
+        caption="Administration"
+        title="User Management"
+        description="Control user accounts, administrative privileges, and suspensions."
+        icon={Users}
+      >
+        <BreezeButton
+          variant="primary"
+          size="md"
+          icon={PlusCircle}
           onClick={() => setModalOpen(true)}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-p1 text-black font-bold text-xs hover:bg-p1/90 shadow-md shadow-p1/20 transition-all"
         >
-          <PlusCircle size={15} />
-          <span>New User</span>
-        </button>
-      </div>
+          New User
+        </BreezeButton>
+      </BreezePageHeader>
 
-      <div className="rounded-2xl bg-[#11141e] border border-[#222638] overflow-hidden shadow-xl">
+      <BreezeCard className="overflow-hidden">
         {loading ? (
           <div className="flex justify-center py-12 text-p5">
             <Loader2 className="animate-spin text-p1 size-8" />
@@ -92,7 +99,7 @@ const AdminUsers = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-[#222638] bg-[#08090d] text-p5 font-semibold uppercase">
+                <tr className="border-b-2 border-s3 bg-s1 text-p5 font-semibold uppercase tracking-wider small-compact">
                   <th className="py-3.5 px-4">User</th>
                   <th className="py-3.5 px-4">Email</th>
                   <th className="py-3.5 px-4">Role</th>
@@ -100,11 +107,11 @@ const AdminUsers = () => {
                   <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#222638]/60">
+              <tbody className="divide-y divide-s3/60">
                 {users.map((u) => (
-                  <tr key={u.id} className="hover:bg-s2/30">
+                  <tr key={u.id} className="hover:bg-s5/30 transition-colors duration-500">
                     <td className="py-3.5 px-4 font-bold text-p4 flex items-center gap-2">
-                      <div className="size-7 rounded-full bg-p1/20 flex items-center justify-center text-xs font-bold text-p1">
+                      <div className="size-7 rounded-full bg-s4/20 border border-s4/30 flex items-center justify-center text-xs font-bold text-p1">
                         {u.username.charAt(0).toUpperCase()}
                       </div>
                       <span>{u.username}</span>
@@ -114,7 +121,7 @@ const AdminUsers = () => {
                       <select
                         value={u.role}
                         onChange={(e) => handleRoleChange(u.id, e.target.value)}
-                        className="bg-[#08090d] border border-[#222638] rounded-lg px-2.5 py-1 text-xs text-p4 uppercase font-semibold focus:outline-none"
+                        className="bg-s1 border-2 border-s3 rounded-xl px-2.5 py-1 text-xs text-p4 uppercase font-semibold focus:outline-none focus:border-s4 transition-all duration-500"
                       >
                         <option value="user">User</option>
                         <option value="moderator">Moderator</option>
@@ -123,28 +130,22 @@ const AdminUsers = () => {
                       </select>
                     </td>
                     <td className="py-3.5 px-4">
-                      <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                          u.is_suspended
-                            ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                            : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                        }`}
-                      >
+                      <BreezeBadge status={u.is_suspended ? 'crashed' : 'online'}>
                         {u.is_suspended ? 'Suspended' : 'Active'}
-                      </span>
+                      </BreezeBadge>
                     </td>
                     <td className="py-3.5 px-4 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => handleSuspendToggle(u)}
-                          className="p-1.5 rounded-lg text-p5 hover:text-amber-400 hover:bg-amber-500/10 transition-colors"
+                          className="p-1.5 rounded-xl text-p5 hover:text-amber-400 hover:bg-amber-500/10 transition-colors duration-500"
                           title={u.is_suspended ? 'Unsuspend' : 'Suspend'}
                         >
                           {u.is_suspended ? <UserCheck size={16} /> : <UserX size={16} />}
                         </button>
                         <button
                           onClick={() => handleDelete(u.id)}
-                          className="p-1.5 rounded-lg text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                          className="p-1.5 rounded-xl text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors duration-500"
                           title="Delete User"
                         >
                           <Trash2 size={16} />
@@ -157,81 +158,63 @@ const AdminUsers = () => {
             </table>
           </div>
         )}
-      </div>
+      </BreezeCard>
 
       {/* New User Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#11141e] border border-[#222638] rounded-2xl p-6 max-w-md w-full shadow-2xl">
-            <h3 className="text-base font-bold text-p4 mb-4">Create New Account</h3>
-            <form onSubmit={handleCreate} className="flex flex-col gap-4">
-              <div>
-                <label className="block text-[11px] font-semibold text-p5 uppercase mb-1">Email</label>
-                <input
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full bg-[#08090d] border border-[#222638] rounded-xl px-4 py-2 text-xs text-p4 focus:outline-none focus:border-p1"
-                />
-              </div>
+      <BreezeModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title="Create New Account"
+      >
+        <form onSubmit={handleCreate} className="flex flex-col gap-4">
+          <BreezeInput
+            label="Email"
+            type="email"
+            required
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          />
+          <BreezeInput
+            label="Username"
+            required
+            value={formData.username}
+            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+          />
+          <BreezeInput
+            label="Password"
+            type="password"
+            required
+            minLength={6}
+            value={formData.password}
+            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+          />
+          <BreezeInput
+            label="Role"
+            type="select"
+            value={formData.role}
+            onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+          >
+            <option value="user">User</option>
+            <option value="moderator">Moderator</option>
+            <option value="admin">Admin</option>
+            <option value="owner">Owner</option>
+          </BreezeInput>
 
-              <div>
-                <label className="block text-[11px] font-semibold text-p5 uppercase mb-1">Username</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  className="w-full bg-[#08090d] border border-[#222638] rounded-xl px-4 py-2 text-xs text-p4 focus:outline-none focus:border-p1"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-semibold text-p5 uppercase mb-1">Password</label>
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full bg-[#08090d] border border-[#222638] rounded-xl px-4 py-2 text-xs text-p4 focus:outline-none focus:border-p1"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-semibold text-p5 uppercase mb-1">Role</label>
-                <select
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  className="w-full bg-[#08090d] border border-[#222638] rounded-xl px-4 py-2 text-xs text-p4 focus:outline-none focus:border-p1 uppercase font-semibold"
-                >
-                  <option value="user">User</option>
-                  <option value="moderator">Moderator</option>
-                  <option value="admin">Admin</option>
-                  <option value="owner">Owner</option>
-                </select>
-              </div>
-
-              <div className="flex justify-end gap-2 mt-2">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs text-p5 hover:text-p4"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl bg-p1 text-black font-bold text-xs hover:bg-p1/90"
-                >
-                  Create User
-                </button>
-              </div>
-            </form>
+          <div className="flex justify-end gap-2 mt-2">
+            <BreezeButton
+              variant="ghost"
+              size="md"
+              type="button"
+              onClick={() => setModalOpen(false)}
+            >
+              Cancel
+            </BreezeButton>
+            <BreezeButton variant="primary" size="md" type="submit">
+              Create User
+            </BreezeButton>
           </div>
-        </div>
-      )}
+        </form>
+      </BreezeModal>
     </div>
   );
 };

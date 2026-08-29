@@ -1,73 +1,88 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useParams, NavLink, Outlet, Link } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useParams, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext.jsx';
 import api from '../services/api.js';
+import BreezeBadge from '../../components/ui/BreezeBadge.jsx';
+import BreezeButton from '../../components/ui/BreezeButton.jsx';
 import {
   Terminal,
   FolderOpen,
+  Users,
   Archive,
   Calendar,
-  Users,
   Database,
   Cpu,
   Network,
   Settings,
   Play,
-  RotateCw,
   Square,
-  Skull,
-  ArrowLeft,
+  RotateCcw,
+  XOctagon,
   Loader2,
+  Copy,
+  Check,
 } from 'lucide-react';
 import clsx from 'clsx';
 
 const ServerLayout = () => {
-  const { id } = useParams();
+  const { serverId } = useParams();
+  const navigate = useNavigate();
   const { subscribe } = useSocket();
   const [server, setServer] = useState(null);
   const [status, setStatus] = useState('offline');
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [actionLoading, setActionLoading] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   const fetchServer = useCallback(async () => {
     try {
-      setLoading(true);
-      const res = await api.get(`/servers/${id}`);
+      const res = await api.get(`/servers/${serverId}`);
       if (res.success && res.data) {
         setServer(res.data);
         setStatus(res.data.status || 'offline');
       }
     } catch (err) {
-      setError(err.message || 'Failed to load server details.');
+      console.error('Failed to load server:', err);
+      navigate('/panel/servers');
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [serverId, navigate]);
 
   useEffect(() => {
     fetchServer();
+  }, [fetchServer]);
 
-    // Subscribe to real-time server status updates
-    const unsubscribe = subscribe(`server:${id}:status`, (event, data) => {
-      if (data && data.status) {
+  useEffect(() => {
+    if (!server?.id) return;
+    const unsub = subscribe(`server:${server.id}:status`, (event, data) => {
+      if (event === 'status_change' && data?.status) {
         setStatus(data.status);
       }
     });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [id, fetchServer, subscribe]);
+    return () => unsub();
+  }, [server?.id, subscribe]);
 
   const handlePower = async (action) => {
     try {
-      setActionLoading(true);
-      await api.post(`/servers/${id}/power`, { action });
+      setActionLoading(action);
+      await api.post(`/servers/${server.id}/power`, { action });
     } catch (err) {
       alert(`Power action failed: ${err.message}`);
     } finally {
-      setActionLoading(false);
+      setActionLoading(null);
+    }
+  };
+
+  const copyAddress = () => {
+    const addr =
+      server?.allocation
+        ? `${server.allocation.ip === '0.0.0.0' ? server.node?.fqdn || 'localhost' : server.allocation.ip}:${server.allocation.port}`
+        : '';
+    if (addr) {
+      navigator.clipboard.writeText(addr);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
@@ -75,203 +90,136 @@ const ServerLayout = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 text-p5">
         <Loader2 className="animate-spin text-p1 size-8" />
-        <p className="text-sm font-medium">Connecting to server control plane...</p>
+        <p className="body-3 font-medium">Loading server...</p>
       </div>
     );
   }
 
-  if (error || !server) {
-    return (
-      <div className="p-8 rounded-2xl bg-red-500/10 border border-red-500/30 text-center max-w-xl mx-auto my-12">
-        <h3 className="text-lg font-bold text-red-400 mb-2">Server Unavailable</h3>
-        <p className="text-sm text-p5 mb-6">{error || 'Server does not exist or you lack permission.'}</p>
-        <Link
-          to="/panel/servers"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-s2 border border-[#222638] text-sm font-medium text-p4 hover:text-p1 transition-colors"
-        >
-          <ArrowLeft size={16} />
-          <span>Back to Servers</span>
-        </Link>
-      </div>
-    );
-  }
+  if (!server) return null;
 
-  const primaryAlloc = server.allocations?.find(a => a.isPrimary) || server.allocations?.[0];
+  const tabs = [
+    { to: 'console', icon: Terminal, label: 'Console' },
+    { to: 'files', icon: FolderOpen, label: 'Files' },
+    { to: 'players', icon: Users, label: 'Players' },
+    { to: 'backups', icon: Archive, label: 'Backups' },
+    { to: 'schedules', icon: Calendar, label: 'Schedules' },
+    { to: 'databases', icon: Database, label: 'Databases' },
+    { to: 'startup', icon: Cpu, label: 'Startup' },
+    { to: 'network', icon: Network, label: 'Network' },
+    { to: 'settings', icon: Settings, label: 'Settings' },
+  ];
 
-  const getStatusBadge = () => {
-    switch (status) {
-      case 'running':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-            <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Online</span>
-          </span>
-        );
-      case 'starting':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">
-            <Loader2 size={12} className="animate-spin text-amber-400" />
-            <span>Starting</span>
-          </span>
-        );
-      case 'stopping':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">
-            <span className="size-2 rounded-full bg-amber-400 animate-ping" />
-            <span>Stopping</span>
-          </span>
-        );
-      case 'crashed':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-500/15 text-red-400 border border-red-500/30">
-            <span className="size-2 rounded-full bg-red-400" />
-            <span>Crashed</span>
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-zinc-500/15 text-zinc-400 border border-zinc-500/30">
-            <span className="size-2 rounded-full bg-zinc-500" />
-            <span>Offline</span>
-          </span>
-        );
-    }
-  };
+  const serverAddress = server?.allocation
+    ? `${server.allocation.ip === '0.0.0.0' ? server.node?.fqdn || 'localhost' : server.allocation.ip}:${server.allocation.port}`
+    : 'Unassigned';
 
-  const navTabClass = ({ isActive }) =>
-    clsx(
-      'flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all duration-200',
-      isActive
-        ? 'bg-p1 text-black font-bold shadow-md shadow-p1/20'
-        : 'text-p5 hover:text-p4 hover:bg-s2/70 border border-transparent'
-    );
+  const isOnline = status === 'running';
+  const isStarting = status === 'starting';
+  const isStopping = status === 'stopping';
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Server Header Banner */}
-      <div className="p-6 rounded-2xl bg-[#11141e] border border-[#222638] flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-xl">
-        <div className="flex items-start gap-4">
-          <Link
-            to="/panel/servers"
-            className="p-2 rounded-xl border border-[#222638] bg-[#08090d] text-p5 hover:text-p1 hover:border-p1/40 transition-colors mt-0.5"
-            title="Back to Servers"
-          >
-            <ArrowLeft size={18} />
-          </Link>
-
+      {/* ===== Server Header ===== */}
+      <div className="border-2 border-s3 rounded-3xl g7 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-500">
+        <div className="flex items-center gap-4">
+          <div className="size-14 rounded-full border-2 border-s2 bg-s1 flex items-center justify-center shadow-500 flex-shrink-0">
+            <img src="/images/detail-1.png" alt="" className="size-9 object-contain" />
+          </div>
           <div>
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-xl sm:text-2xl font-bold text-p4 tracking-tight">{server.name}</h1>
-              {getStatusBadge()}
+            <div className="flex items-center gap-3">
+              <h1 className="h6 text-p4">{server.name}</h1>
+              <BreezeBadge
+                status={status}
+                pulse={isOnline || isStarting}
+              >
+                {status}
+              </BreezeBadge>
             </div>
-
-            <div className="flex items-center gap-4 mt-2 text-xs text-p5 flex-wrap">
-              <span className="font-mono bg-[#08090d] px-2 py-0.5 rounded border border-[#222638] text-p1">
-                {primaryAlloc ? `${server.node?.fqdn || '0.0.0.0'}:${primaryAlloc.port}` : 'No Port Allocated'}
-              </span>
-              <span>•</span>
-              <span className="capitalize">{server.software} {server.minecraft_version}</span>
-              <span>•</span>
-              <span>{server.memory} MB RAM</span>
-              <span>•</span>
-              <span>Node: {server.node?.name || 'Local Node'}</span>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="body-3 text-p5 font-mono">{serverAddress}</p>
+              {server?.allocation && (
+                <button
+                  onClick={copyAddress}
+                  className="p-1 rounded-lg text-p5 hover:text-p1 transition-colors duration-500"
+                  title="Copy Address"
+                >
+                  {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                </button>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Power Action Buttons */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
+        {/* Power Controls */}
+        <div className="flex items-center gap-2">
+          <BreezeButton
+            variant="primary"
+            size="sm"
+            icon={actionLoading === 'start' ? Loader2 : Play}
             onClick={() => handlePower('start')}
-            disabled={status === 'running' || status === 'starting' || actionLoading}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500 hover:text-black transition-all disabled:opacity-40 disabled:pointer-events-none"
+            disabled={isOnline || isStarting}
           >
-            <Play size={14} />
-            <span>Start</span>
-          </button>
-
-          <button
+            Start
+          </BreezeButton>
+          <BreezeButton
+            variant="warning"
+            size="sm"
+            icon={actionLoading === 'restart' ? Loader2 : RotateCcw}
             onClick={() => handlePower('restart')}
-            disabled={status === 'offline' || actionLoading}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500 hover:text-black transition-all disabled:opacity-40 disabled:pointer-events-none"
+            disabled={!isOnline}
           >
-            <RotateCw size={14} />
-            <span>Restart</span>
-          </button>
-
-          <button
+            Restart
+          </BreezeButton>
+          <BreezeButton
+            variant="destructive"
+            size="sm"
+            icon={actionLoading === 'stop' ? Loader2 : Square}
             onClick={() => handlePower('stop')}
-            disabled={status === 'offline' || status === 'stopping' || actionLoading}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-red-500/20 text-red-300 border border-red-500/40 hover:bg-red-500 hover:text-white transition-all disabled:opacity-40 disabled:pointer-events-none"
+            disabled={!isOnline && !isStarting}
           >
-            <Square size={14} />
-            <span>Stop</span>
-          </button>
-
-          <button
+            Stop
+          </BreezeButton>
+          <BreezeButton
+            variant="destructive"
+            size="xs"
+            icon={actionLoading === 'kill' ? Loader2 : XOctagon}
             onClick={() => handlePower('kill')}
-            disabled={status === 'offline' || actionLoading}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-zinc-800 text-zinc-400 border border-zinc-700 hover:bg-red-600 hover:text-white transition-all disabled:opacity-40 disabled:pointer-events-none"
-            title="Force terminate process immediately"
+            disabled={!isOnline && !isStarting && !isStopping}
+            className="hidden sm:inline-flex"
           >
-            <Skull size={14} />
-            <span>Kill</span>
-          </button>
+            Kill
+          </BreezeButton>
         </div>
       </div>
 
-      {/* Sub-navigation Tabs */}
-      <nav className="flex items-center gap-2 overflow-x-auto pb-1 scroll-hide border-b border-[#222638]">
-        <NavLink to={`/panel/servers/${id}/console`} className={navTabClass}>
-          <Terminal size={15} />
-          <span>Console</span>
-        </NavLink>
-
-        <NavLink to={`/panel/servers/${id}/files`} className={navTabClass}>
-          <FolderOpen size={15} />
-          <span>Files</span>
-        </NavLink>
-
-        <NavLink to={`/panel/servers/${id}/backups`} className={navTabClass}>
-          <Archive size={15} />
-          <span>Backups</span>
-        </NavLink>
-
-        <NavLink to={`/panel/servers/${id}/schedules`} className={navTabClass}>
-          <Calendar size={15} />
-          <span>Schedules</span>
-        </NavLink>
-
-        <NavLink to={`/panel/servers/${id}/players`} className={navTabClass}>
-          <Users size={15} />
-          <span>Players</span>
-        </NavLink>
-
-        <NavLink to={`/panel/servers/${id}/databases`} className={navTabClass}>
-          <Database size={15} />
-          <span>Databases</span>
-        </NavLink>
-
-        <NavLink to={`/panel/servers/${id}/startup`} className={navTabClass}>
-          <Cpu size={15} />
-          <span>Startup</span>
-        </NavLink>
-
-        <NavLink to={`/panel/servers/${id}/network`} className={navTabClass}>
-          <Network size={15} />
-          <span>Network</span>
-        </NavLink>
-
-        <NavLink to={`/panel/servers/${id}/settings`} className={navTabClass}>
-          <Settings size={15} />
-          <span>Settings</span>
-        </NavLink>
-      </nav>
-
-      {/* Tab Page Outlet */}
-      <div className="flex-1">
-        <Outlet context={{ server, status, fetchServer }} />
+      {/* ===== Tab Navigation ===== */}
+      <div className="border-2 border-s3 rounded-3xl bg-s2 overflow-hidden">
+        <div className="flex items-center gap-1 p-2 overflow-x-auto">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <NavLink
+                key={tab.to}
+                to={`/panel/servers/${serverId}/${tab.to}`}
+                className={({ isActive }) =>
+                  clsx(
+                    'flex items-center gap-2 px-3 py-2 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all duration-500',
+                    isActive
+                      ? 'g4 text-p1 border border-s4/30 shadow-400'
+                      : 'text-p5 hover:text-p4 hover:bg-s5/40 border border-transparent',
+                  )
+                }
+              >
+                <Icon size={14} />
+                <span>{tab.label}</span>
+              </NavLink>
+            );
+          })}
+        </div>
       </div>
+
+      {/* ===== Page Content ===== */}
+      <Outlet context={{ server, status, fetchServer }} />
     </div>
   );
 };

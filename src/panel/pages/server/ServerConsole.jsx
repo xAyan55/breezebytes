@@ -2,17 +2,15 @@ import { useState, useEffect, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useSocket } from '../../context/SocketContext.jsx';
 import api from '../../services/api.js';
+import BreezeButton from '../../../components/ui/BreezeButton.jsx';
+import BreezeStatCard from '../../../components/ui/BreezeStatCard.jsx';
 import {
   Terminal,
   Send,
   Trash2,
   Copy,
   Check,
-  Cpu,
-  HardDrive,
-  Clock,
   ArrowDownCircle,
-  Zap,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -36,7 +34,6 @@ const ServerConsole = () => {
 
   const terminalEndRef = useRef(null);
 
-  // Fetch initial log history
   useEffect(() => {
     const fetchLogs = async () => {
       try {
@@ -51,7 +48,6 @@ const ServerConsole = () => {
 
     fetchLogs();
 
-    // Subscribe to real-time console stream
     const unsubConsole = subscribe(`server:${server.id}:console`, (event, data) => {
       if (event === 'console_line' && data) {
         setLogs((prev) => [...prev.slice(-1000), data]);
@@ -60,7 +56,6 @@ const ServerConsole = () => {
       }
     });
 
-    // Subscribe to real-time server stats
     const unsubStats = subscribe(`server:${server.id}:stats`, (event, data) => {
       if (event === 'stats_update' && data) {
         setStats(data);
@@ -73,7 +68,6 @@ const ServerConsole = () => {
     };
   }, [server.id, subscribe]);
 
-  // Auto-scroll effect
   useEffect(() => {
     if (autoScroll && terminalEndRef.current) {
       terminalEndRef.current.scrollTop = terminalEndRef.current.scrollHeight;
@@ -113,9 +107,7 @@ const ServerConsole = () => {
     }
   };
 
-  const clearConsole = () => {
-    setLogs([]);
-  };
+  const clearConsole = () => setLogs([]);
 
   const copyConsole = () => {
     const text = logs.map((l) => l.text).join('\n');
@@ -155,68 +147,37 @@ const ServerConsole = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Live Resource Widgets Bar */}
+      {/* ===== Live Stats ===== */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {/* CPU */}
-        <div className="p-4 rounded-2xl bg-[#11141e] border border-[#222638] flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-medium text-p5 uppercase">CPU Usage</p>
-            <p className="text-lg font-bold text-p4 font-mono mt-0.5">
-              {isOnline ? `${stats.cpu}%` : '0%'}
-            </p>
-          </div>
-          <div className="size-10 rounded-xl bg-p1/10 flex items-center justify-center text-p1">
-            <Cpu size={18} />
-          </div>
-        </div>
-
-        {/* RAM */}
-        <div className="p-4 rounded-2xl bg-[#11141e] border border-[#222638] flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-medium text-p5 uppercase">Memory</p>
-            <p className="text-lg font-bold text-p1 font-mono mt-0.5">
-              {isOnline ? `${stats.memory} MB` : '0 MB'}
-            </p>
-          </div>
-          <div className="size-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
-            <Zap size={18} />
-          </div>
-        </div>
-
-        {/* Disk */}
-        <div className="p-4 rounded-2xl bg-[#11141e] border border-[#222638] flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-medium text-p5 uppercase">Disk Usage</p>
-            <p className="text-lg font-bold text-p4 font-mono mt-0.5">
-              {stats.disk} MB
-            </p>
-          </div>
-          <div className="size-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400">
-            <HardDrive size={18} />
-          </div>
-        </div>
-
-        {/* Uptime */}
-        <div className="p-4 rounded-2xl bg-[#11141e] border border-[#222638] flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-medium text-p5 uppercase">Uptime</p>
-            <p className="text-lg font-bold text-p4 font-mono mt-0.5">
-              {isOnline ? formatUptime(stats.uptime) : 'Offline'}
-            </p>
-          </div>
-          <div className="size-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400">
-            <Clock size={18} />
-          </div>
-        </div>
+        <BreezeStatCard
+          label="CPU Usage"
+          value={isOnline ? `${stats.cpu}%` : '0%'}
+          image="/images/detail-1.png"
+        />
+        <BreezeStatCard
+          label="Memory"
+          value={isOnline ? `${stats.memory} MB` : '0 MB'}
+          image="/images/detail-3.png"
+        />
+        <BreezeStatCard
+          label="Disk Usage"
+          value={`${stats.disk} MB`}
+          image="/images/detail-2.png"
+        />
+        <BreezeStatCard
+          label="Uptime"
+          value={isOnline ? formatUptime(stats.uptime) : 'Offline'}
+          image="/images/detail-4.png"
+        />
       </div>
 
-      {/* Interactive Terminal Window */}
-      <div className="rounded-2xl bg-[#06070a] border border-[#222638] flex flex-col shadow-2xl overflow-hidden">
+      {/* ===== Terminal ===== */}
+      <div className="border-2 border-s3 rounded-3xl bg-s1 flex flex-col shadow-500 overflow-hidden">
         {/* Terminal Titlebar */}
-        <div className="px-4 py-3 bg-[#11141e] border-b border-[#222638] flex items-center justify-between">
+        <div className="px-4 py-3 bg-s2 border-b-2 border-s3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Terminal size={16} className="text-p1" />
-            <span className="text-xs font-bold text-p4 uppercase tracking-wider">
+            <span className="small-compact uppercase text-p4 font-bold tracking-wider">
               Server Terminal & Output
             </span>
           </div>
@@ -225,10 +186,10 @@ const ServerConsole = () => {
             <button
               onClick={() => setAutoScroll(!autoScroll)}
               className={clsx(
-                'flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors',
+                'flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-semibold transition-all duration-500 border-2',
                 autoScroll
-                  ? 'bg-p1/10 text-p1 border border-p1/30'
-                  : 'bg-[#08090d] text-p5 border border-[#222638]'
+                  ? 'g4 text-p1 border-s4/30'
+                  : 'bg-s1 text-p5 border-s3',
               )}
               title="Toggle Auto-Scroll"
             >
@@ -238,7 +199,7 @@ const ServerConsole = () => {
 
             <button
               onClick={copyConsole}
-              className="p-1.5 rounded-lg text-p5 hover:text-p4 hover:bg-s2/60 transition-colors"
+              className="p-1.5 rounded-xl text-p5 hover:text-p4 hover:bg-s5/40 transition-colors duration-500"
               title="Copy Console Output"
             >
               {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
@@ -246,7 +207,7 @@ const ServerConsole = () => {
 
             <button
               onClick={clearConsole}
-              className="p-1.5 rounded-lg text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              className="p-1.5 rounded-xl text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors duration-500"
               title="Clear Terminal"
             >
               <Trash2 size={14} />
@@ -257,7 +218,7 @@ const ServerConsole = () => {
         {/* Terminal Screen */}
         <div
           ref={terminalEndRef}
-          className="p-4 font-mono text-xs overflow-y-auto h-[450px] sm:h-[500px] flex flex-col gap-1 select-text bg-[#06070a]"
+          className="p-4 font-mono text-xs overflow-y-auto h-[450px] sm:h-[500px] flex flex-col gap-1 select-text bg-s1"
         >
           {logs.length === 0 ? (
             <p className="text-p5/40 italic my-auto text-center">
@@ -272,10 +233,10 @@ const ServerConsole = () => {
           )}
         </div>
 
-        {/* Command Input Bar */}
+        {/* Command Input */}
         <form
           onSubmit={handleSendCommand}
-          className="p-3 bg-[#11141e] border-t border-[#222638] flex items-center gap-3"
+          className="p-3 bg-s2 border-t-2 border-s3 flex items-center gap-3"
         >
           <span className="text-p1 font-mono font-bold text-sm select-none pl-1">&gt;</span>
           <input
@@ -289,16 +250,17 @@ const ServerConsole = () => {
             value={command}
             onChange={(e) => setCommand(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 bg-[#08090d] border border-[#222638] rounded-xl px-4 py-2 text-xs font-mono text-p4 placeholder:text-p5/40 focus:outline-none focus:border-p1/60 disabled:opacity-40"
+            className="flex-1 bg-s1 border-2 border-s3 rounded-2xl px-4 py-2 text-xs font-mono text-p4 placeholder:text-p5/40 focus:outline-none focus:border-s4 transition-all duration-500 disabled:opacity-40"
           />
-          <button
+          <BreezeButton
             type="submit"
+            variant="primary"
+            size="sm"
+            iconRight={Send}
             disabled={!isOnline || !command.trim()}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-p1 text-black font-bold text-xs hover:bg-p1/90 shadow-sm shadow-p1/20 transition-all disabled:opacity-40 disabled:pointer-events-none"
           >
-            <span>Send</span>
-            <Send size={13} />
-          </button>
+            Send
+          </BreezeButton>
         </form>
       </div>
     </div>
