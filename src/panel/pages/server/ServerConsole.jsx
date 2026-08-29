@@ -386,7 +386,7 @@ const ServerConsole = () => {
               <span className="text-[11px] font-semibold text-p5/70 uppercase tracking-wider block">
                 Address
               </span>
-              <span className="text-xs font-bold text-p4 font-mono block truncate select-all">
+              <span className="text-xs font-semibold text-p4 tracking-wide block truncate select-all">
                 {serverAddress}
               </span>
             </div>
@@ -482,7 +482,7 @@ const ServerConsole = () => {
             <span className="text-[11px] font-semibold text-p5/70 uppercase tracking-wider block">
               Network Port
             </span>
-            <span className="text-xs font-bold text-p4 font-mono block truncate">
+            <span className="text-xs font-semibold text-p4 tracking-wide block truncate">
               {server.allocation?.port ? `${server.allocation.port} (Primary)` : 'Unassigned'}
             </span>
           </div>

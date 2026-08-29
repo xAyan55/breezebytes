@@ -57,7 +57,7 @@ const ServerNetwork = () => {
               <BreezeCard key={a.id} className="p-5 flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="base-bold text-p4 font-mono">
+                    <span className="base-bold text-p4 font-semibold tracking-wide">
                       {a.ip === '0.0.0.0' ? server.node?.fqdn || '0.0.0.0' : a.ip}:{a.port}
                     </span>
                     {isPrimary && <BreezeBadge status="default" dot={false}>Primary</BreezeBadge>}

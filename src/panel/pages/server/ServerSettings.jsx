@@ -259,7 +259,7 @@ const ServerSettings = () => {
                   <Globe size={14} className="text-p1" />
                   <span>Address</span>
                 </span>
-                <span className="font-mono text-[11px] text-p4 truncate max-w-[170px] select-all">
+                <span className="font-medium text-xs text-p4 tracking-wide truncate max-w-[170px] select-all">
                   {serverAddress}
                 </span>
               </div>

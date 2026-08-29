@@ -379,7 +379,7 @@ const ServerLayout = () => {
                     </BreezeBadge>
                   </div>
                   <div className="flex items-center gap-2 mt-1">
-                    <p className="text-xs text-p4/90 font-mono truncate drop-shadow">{serverAddress}</p>
+                    <p className="text-xs text-p4/90 font-medium tracking-wide truncate drop-shadow">{serverAddress}</p>
                     {server?.allocation && (
                       <button
                         onClick={copyAddress}

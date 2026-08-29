@@ -148,7 +148,7 @@ const ServerList = () => {
                       <h3 className="base-bold text-p4 truncate group-hover:text-p1 transition-colors duration-300">
                         {s.name}
                       </h3>
-                      <p className="small-2 text-p5 font-mono truncate">
+                      <p className="small-2 text-p5/90 font-medium tracking-wide truncate">
                         {s.allocation
                           ? `${s.allocation.ip === '0.0.0.0' ? s.node?.fqdn || 'localhost' : s.allocation.ip}:${s.allocation.port}`
                           : 'No allocation'}
