@@ -37,10 +37,10 @@ async function deploy() {
     console.log(`\n🔗 Connected via SSH to ${VPS_HOST}!`);
 
     try {
-      // 1. Pull latest commit from git repo
+      // 1. Fetch and hard-reset to origin/main, cleaning any untracked files
       await runRemoteCommand(
         conn,
-        `cd ${TARGET_DIR} && git reset --hard HEAD && git pull origin main`
+        `cd ${TARGET_DIR} && git fetch origin main && git reset --hard origin/main && git clean -fd`
       );
 
       // 2. Install dependencies & build frontend bundle
