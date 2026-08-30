@@ -17,7 +17,6 @@ import {
   Radio,
   Server,
   Network,
-  Layers,
   Wifi,
   ChevronDown,
 } from 'lucide-react';
@@ -121,8 +120,8 @@ const ServerConsole = () => {
     e?.preventDefault();
     if (!command.trim()) return;
 
-    sendCommand(server.id, command);
-    setCommandHistory((prev) => [...prev, command]);
+    sendCommand(server.id, command.trim());
+    setCommandHistory((prev) => [...prev, command.trim()]);
     setHistoryIndex(-1);
     setCommand('');
     scrollToBottom();
@@ -227,26 +226,26 @@ const ServerConsole = () => {
   const diskPercent = Math.min(100, Math.max(0, (stats.disk / totalDisk) * 100));
 
   return (
-    <div className="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_310px] xl:grid-cols-[minmax(0,1fr)_330px] gap-5 items-start">
-      {/* ===== Left: Dominant Console & Terminal Workspace ===== */}
+    <div className="w-full grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_310px] xl:grid-cols-[minmax(0,1fr)_330px] gap-5 items-start">
+      {/* ===== Left: Dominant Console & Terminal Workspace (75-80%) ===== */}
       <div className="flex flex-col gap-4 min-w-0">
         {/* Terminal Box */}
-        <div className="border-2 border-s3 rounded-2xl bg-s1 flex flex-col overflow-hidden min-w-0 relative">
+        <div className="border-2 border-s3 rounded-2xl bg-s1 flex flex-col overflow-hidden min-w-0 relative shadow-sm">
           {/* Terminal Header / Toolbar */}
           <div className="px-4 py-3 bg-s2 border-b-2 border-s3 flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2.5">
               <Terminal size={16} className="text-p1 flex-shrink-0" />
               <span className="small-compact uppercase text-p4 font-bold tracking-wider text-xs">
-                Server Terminal & Output
+                Server Terminal
               </span>
-              <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-s1 border border-s3 text-[10px] font-medium text-p5">
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-s1 border border-s3 text-[10px] font-medium text-p5">
                 <span
                   className={clsx(
                     'size-1.5 rounded-full',
                     isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-p5/40',
                   )}
                 />
-                {isOnline ? 'Live Stream' : 'Idle'}
+                {isOnline ? 'Live Stream' : 'Offline'}
               </span>
             </div>
 
@@ -254,7 +253,7 @@ const ServerConsole = () => {
               <button
                 onClick={() => setAutoScroll(!autoScroll)}
                 className={clsx(
-                  'flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold transition-all duration-300 border-2 cursor-pointer',
+                  'flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold transition-all duration-300 border cursor-pointer',
                   autoScroll
                     ? 'bg-s4/20 text-p1 border-s4/40'
                     : 'bg-s1 text-p5 border-s3 hover:text-p4 hover:border-s4',
@@ -262,13 +261,13 @@ const ServerConsole = () => {
                 title="Toggle Console Auto-Scroll"
               >
                 <ArrowDownCircle size={14} className={clsx(autoScroll && 'text-p1')} />
-                <span>Scroll</span>
+                <span>Auto-Scroll</span>
               </button>
 
               <button
                 onClick={copyConsole}
                 className="p-1.5 rounded-xl text-p5 hover:text-p4 hover:bg-s5/40 border border-transparent hover:border-s3 transition-all duration-300 cursor-pointer"
-                title="Copy Terminal Logs"
+                title="Copy Terminal Output"
               >
                 {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
               </button>
@@ -287,15 +286,15 @@ const ServerConsole = () => {
           <div
             ref={terminalContainerRef}
             onScroll={handleScroll}
-            className="p-4 font-mono text-xs sm:text-[13px] overflow-y-auto h-[480px] flex flex-col gap-1 select-text bg-[#07080c] text-zinc-300 scroll-smooth relative"
+            className="p-4 font-mono text-xs sm:text-[13px] overflow-y-auto h-[520px] flex flex-col gap-0.5 select-text bg-[#07080c] text-zinc-300 scroll-smooth relative"
           >
             {logs.length === 0 ? (
               <div className="my-auto flex flex-col items-center justify-center gap-2 text-center p-6 select-none">
                 <Radio size={24} className="text-p5/30 animate-pulse" />
                 <p className="text-p5/40 text-xs font-mono">
                   {isOnline
-                    ? 'Terminal ready. Streaming live stdout/stderr console logs...'
-                    : 'Terminal offline. Start the server to stream live stdout/stderr logs.'}
+                    ? 'Terminal connected. Streaming live server logs...'
+                    : 'Server is currently offline. Start the server to stream live logs.'}
                 </p>
               </div>
             ) : (
@@ -348,84 +347,21 @@ const ServerConsole = () => {
             </BreezeButton>
           </form>
         </div>
-
-        {/* 3 Bottom Summary Stats (Pterodactyl Architecture) */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {/* Bottom CPU */}
-          <div className="border-2 border-s3 rounded-xl bg-s2 p-3.5 flex flex-col gap-1.5">
-            <span className="text-[11px] font-semibold text-p5/70 uppercase tracking-wider flex items-center gap-1.5">
-              <Cpu size={13} className="text-p1" />
-              <span>CPU Load</span>
-            </span>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-p4 font-mono">
-                {isOnline ? `${stats.cpu}%` : '0%'}
-              </span>
-              <span className="text-[11px] text-p5/50 font-mono">/ {cpuLimit}%</span>
-            </div>
-            <div className="w-full bg-s3 rounded-full h-1 overflow-hidden mt-0.5">
-              <div
-                className="bg-gradient-to-r from-p2 to-p1 h-full rounded-full transition-all duration-300"
-                style={{ width: `${cpuPercent}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Bottom Memory */}
-          <div className="border-2 border-s3 rounded-xl bg-s2 p-3.5 flex flex-col gap-1.5">
-            <span className="text-[11px] font-semibold text-p5/70 uppercase tracking-wider flex items-center gap-1.5">
-              <Layers size={13} className="text-p1" />
-              <span>Memory</span>
-            </span>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-p4 font-mono">
-                {isOnline ? formatMb(stats.memory) : '0 MB'}
-              </span>
-              <span className="text-[11px] text-p5/50 font-mono">/ {formatMb(totalRam)}</span>
-            </div>
-            <div className="w-full bg-s3 rounded-full h-1 overflow-hidden mt-0.5">
-              <div
-                className="bg-gradient-to-r from-p2 to-p1 h-full rounded-full transition-all duration-300"
-                style={{ width: `${memoryPercent}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Bottom Disk */}
-          <div className="border-2 border-s3 rounded-xl bg-s2 p-3.5 flex flex-col gap-1.5">
-            <span className="text-[11px] font-semibold text-p5/70 uppercase tracking-wider flex items-center gap-1.5">
-              <HardDrive size={13} className="text-p1" />
-              <span>Disk</span>
-            </span>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-p4 font-mono">
-                {formatMb(stats.disk)}
-              </span>
-              <span className="text-[11px] text-p5/50 font-mono">/ {formatMb(totalDisk)}</span>
-            </div>
-            <div className="w-full bg-s3 rounded-full h-1 overflow-hidden mt-0.5">
-              <div
-                className="bg-gradient-to-r from-p2 to-p1 h-full rounded-full transition-all duration-300"
-                style={{ width: `${diskPercent}%` }}
-              />
-            </div>
-          </div>
-        </div>
       </div>
 
-      {/* ===== Right: Pterodactyl-Inspired Stack of Resource Cards ===== */}
-      <div className="flex flex-col gap-2.5 min-w-0">
+      {/* ===== Right: Single Compact Live Resource Sidebar (20-25%) ===== */}
+      <div className="flex flex-col gap-3 min-w-0">
         {/* Card 1: Address */}
-        <div className="border-2 border-s3 rounded-xl bg-s2 p-3 flex items-center justify-between gap-3 hover:border-s4/60 transition-colors duration-300 group">
+        <div className="border-2 border-s3 rounded-2xl bg-s2 p-3.5 flex items-center justify-between gap-3 hover:border-s4/60 transition-colors duration-300">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 flex-shrink-0">
-              <Wifi size={17} />
+            <div className="size-9 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 flex-shrink-0">
+              <Wifi size={16} />
             </div>
             <div className="min-w-0">
-              <span className="text-[11px] font-semibold text-p5/70 uppercase tracking-wider block">
+              <span className="text-[10px] font-semibold text-p5/70 uppercase tracking-wider block font-sans">
                 Address
               </span>
-              <span className="text-xs font-semibold text-p4 tracking-wide block truncate select-all">
+              <span className="text-xs font-semibold text-p4 font-mono tracking-wide block truncate select-all">
                 {serverAddress}
               </span>
             </div>
@@ -433,7 +369,7 @@ const ServerConsole = () => {
           {server?.allocation && (
             <button
               onClick={copyAddress}
-              className="p-2 rounded-xl text-p5 hover:text-p1 hover:bg-s5/40 border border-transparent hover:border-s3 transition-colors cursor-pointer flex-shrink-0"
+              className="p-1.5 rounded-xl text-p5 hover:text-p1 hover:bg-s5/40 border border-transparent hover:border-s3 transition-colors cursor-pointer flex-shrink-0"
               title="Copy Address"
             >
               {addrCopied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
@@ -442,12 +378,12 @@ const ServerConsole = () => {
         </div>
 
         {/* Card 2: Uptime */}
-        <div className="border-2 border-s3 rounded-xl bg-s2 p-3 flex items-center gap-3 hover:border-s4/60 transition-colors duration-300">
-          <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 flex-shrink-0">
-            <Clock size={17} />
+        <div className="border-2 border-s3 rounded-2xl bg-s2 p-3.5 flex items-center gap-3 hover:border-s4/60 transition-colors duration-300">
+          <div className="size-9 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 flex-shrink-0">
+            <Clock size={16} />
           </div>
           <div className="min-w-0 flex-1">
-            <span className="text-[11px] font-semibold text-p5/70 uppercase tracking-wider block">
+            <span className="text-[10px] font-semibold text-p5/70 uppercase tracking-wider block font-sans">
               Uptime
             </span>
             <div className="flex items-center justify-between">
@@ -464,79 +400,83 @@ const ServerConsole = () => {
           </div>
         </div>
 
-        {/* Card 3: CPU Load */}
-        <div className="border-2 border-s3 rounded-xl bg-s2 p-3 flex items-center gap-3 hover:border-s4/60 transition-colors duration-300">
-          <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 flex-shrink-0">
-            <Cpu size={17} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <span className="text-[11px] font-semibold text-p5/70 uppercase tracking-wider block">
-              CPU Load
+        {/* Card 3: CPU Load with Visual Progress Bar */}
+        <div className="border-2 border-s3 rounded-2xl bg-s2 p-3.5 flex flex-col gap-2 hover:border-s4/60 transition-colors duration-300">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-semibold text-p5/70 uppercase tracking-wider flex items-center gap-1.5 font-sans">
+              <Cpu size={14} className="text-p1" />
+              <span>CPU Load</span>
             </span>
-            <span className="text-xs font-bold text-p4 font-mono block">
+            <span className="text-xs font-bold text-p4 font-mono">
               {isOnline ? `${stats.cpu}%` : '0%'}
-              <span className="text-p5/60 font-normal text-[11px]"> / {cpuLimit}%</span>
+              <span className="text-p5/50 font-normal text-[10px]"> / {cpuLimit}%</span>
             </span>
+          </div>
+          <div className="w-full bg-s1 rounded-full h-1.5 overflow-hidden border border-s3">
+            <div
+              className="bg-gradient-to-r from-p2 to-p1 h-full rounded-full transition-all duration-300"
+              style={{ width: `${cpuPercent}%` }}
+            />
           </div>
         </div>
 
-        {/* Card 4: Memory */}
-        <div className="border-2 border-s3 rounded-xl bg-s2 p-3 flex items-center gap-3 hover:border-s4/60 transition-colors duration-300">
-          <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 flex-shrink-0">
-            <Activity size={17} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <span className="text-[11px] font-semibold text-p5/70 uppercase tracking-wider block">
-              Memory
+        {/* Card 4: Memory Usage with Visual Progress Bar */}
+        <div className="border-2 border-s3 rounded-2xl bg-s2 p-3.5 flex flex-col gap-2 hover:border-s4/60 transition-colors duration-300">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-semibold text-p5/70 uppercase tracking-wider flex items-center gap-1.5 font-sans">
+              <Activity size={14} className="text-p1" />
+              <span>Memory</span>
             </span>
-            <span className="text-xs font-bold text-p4 font-mono block">
+            <span className="text-xs font-bold text-p4 font-mono">
               {isOnline ? formatMb(stats.memory) : '0 MB'}
-              <span className="text-p5/60 font-normal text-[11px]"> / {formatMb(totalRam)}</span>
+              <span className="text-p5/50 font-normal text-[10px]"> / {formatMb(totalRam)}</span>
             </span>
+          </div>
+          <div className="w-full bg-s1 rounded-full h-1.5 overflow-hidden border border-s3">
+            <div
+              className="bg-gradient-to-r from-p2 to-p1 h-full rounded-full transition-all duration-300"
+              style={{ width: `${memoryPercent}%` }}
+            />
           </div>
         </div>
 
-        {/* Card 5: Disk */}
-        <div className="border-2 border-s3 rounded-xl bg-s2 p-3 flex items-center gap-3 hover:border-s4/60 transition-colors duration-300">
-          <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 flex-shrink-0">
-            <HardDrive size={17} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <span className="text-[11px] font-semibold text-p5/70 uppercase tracking-wider block">
-              Disk
+        {/* Card 5: Disk Usage with Visual Progress Bar */}
+        <div className="border-2 border-s3 rounded-2xl bg-s2 p-3.5 flex flex-col gap-2 hover:border-s4/60 transition-colors duration-300">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-semibold text-p5/70 uppercase tracking-wider flex items-center gap-1.5 font-sans">
+              <HardDrive size={14} className="text-p1" />
+              <span>Disk</span>
             </span>
-            <span className="text-xs font-bold text-p4 font-mono block">
+            <span className="text-xs font-bold text-p4 font-mono">
               {formatMb(stats.disk)}
-              <span className="text-p5/60 font-normal text-[11px]"> / {formatMb(totalDisk)}</span>
+              <span className="text-p5/50 font-normal text-[10px]"> / {formatMb(totalDisk)}</span>
             </span>
+          </div>
+          <div className="w-full bg-s1 rounded-full h-1.5 overflow-hidden border border-s3">
+            <div
+              className="bg-gradient-to-r from-emerald-500 to-emerald-400 h-full rounded-full transition-all duration-300"
+              style={{ width: `${diskPercent}%` }}
+            />
           </div>
         </div>
 
-        {/* Card 6: Network Allocation */}
-        <div className="border-2 border-s3 rounded-xl bg-s2 p-3 flex items-center gap-3 hover:border-s4/60 transition-colors duration-300">
-          <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 flex-shrink-0">
-            <Network size={17} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <span className="text-[11px] font-semibold text-p5/70 uppercase tracking-wider block">
-              Network Port
+        {/* Card 6: Network Port & Node (Combined compact) */}
+        <div className="border-2 border-s3 rounded-2xl bg-s2 p-3.5 flex flex-col gap-2 hover:border-s4/60 transition-colors duration-300 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-semibold text-p5/70 uppercase tracking-wider flex items-center gap-1.5 font-sans">
+              <Network size={14} className="text-p1" />
+              <span>Port</span>
             </span>
-            <span className="text-xs font-semibold text-p4 tracking-wide block truncate">
+            <span className="font-mono text-p4 font-semibold">
               {server.allocation?.port ? `${server.allocation.port} (Primary)` : 'Unassigned'}
             </span>
           </div>
-        </div>
-
-        {/* Card 7: Node / Host */}
-        <div className="border-2 border-s3 rounded-xl bg-s2 p-3 flex items-center gap-3 hover:border-s4/60 transition-colors duration-300">
-          <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 flex-shrink-0">
-            <Server size={17} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <span className="text-[11px] font-semibold text-p5/70 uppercase tracking-wider block">
-              Node
+          <div className="flex items-center justify-between pt-2 border-t border-s3/60">
+            <span className="text-[10px] font-semibold text-p5/70 uppercase tracking-wider flex items-center gap-1.5 font-sans">
+              <Server size={14} className="text-p1" />
+              <span>Node</span>
             </span>
-            <span className="text-xs font-bold text-p4 truncate block" title={server.node?.name || server.node?.fqdn}>
+            <span className="text-p4 font-bold truncate max-w-[150px]" title={server.node?.name || server.node?.fqdn}>
               {server.node?.name || server.node?.fqdn || 'Local Daemon'}
             </span>
           </div>

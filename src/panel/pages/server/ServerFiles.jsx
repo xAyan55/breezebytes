@@ -5,6 +5,7 @@ import BreezeCard from '../../../components/ui/BreezeCard.jsx';
 import BreezeButton from '../../../components/ui/BreezeButton.jsx';
 import BreezeModal from '../../../components/ui/BreezeModal.jsx';
 import BreezeInput from '../../../components/ui/BreezeInput.jsx';
+import BreezePageHeader from '../../../components/ui/BreezePageHeader.jsx';
 import {
   FolderOpen,
   FileCode,
@@ -20,6 +21,7 @@ import {
   Check,
   AlertCircle,
   FileText,
+  RefreshCw,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { BreezeSkeleton } from '../../../components/ui/BreezeSkeleton.jsx';
@@ -112,7 +114,7 @@ const ServerFiles = () => {
         path: editingFile,
         content: fileContent,
       });
-      showNotification('success', 'File saved successfully!');
+      showNotification('success', 'File saved successfully.');
     } catch (err) {
       showNotification('error', `Failed to save file: ${err.message}`);
     } finally {
@@ -227,7 +229,7 @@ const ServerFiles = () => {
   };
 
   const formatSize = (bytes) => {
-    if (!bytes) return '0 B';
+    if (!bytes && bytes !== 0) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -243,7 +245,7 @@ const ServerFiles = () => {
   // File Editor View
   if (editingFile) {
     return (
-      <div className="flex flex-col gap-4 max-w-6xl mx-auto w-full">
+      <div className="flex flex-col gap-4 w-full">
         {/* Editor Toolbar */}
         <BreezeCard className="p-4 flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
@@ -259,7 +261,7 @@ const ServerFiles = () => {
             </button>
             <div className="min-w-0">
               <p className="text-xs font-bold text-p4 font-mono truncate">{editingFile}</p>
-              <p className="text-[11px] text-p5">Text / Config Editor</p>
+              <p className="text-[11px] text-p5">Text / Configuration Editor</p>
             </div>
           </div>
           <BreezeButton
@@ -291,7 +293,7 @@ const ServerFiles = () => {
           <textarea
             value={fileContent}
             onChange={(e) => setFileContent(e.target.value)}
-            className="w-full h-[550px] p-4 bg-transparent text-p4 font-mono text-xs leading-relaxed focus:outline-none resize-none selection:bg-p1 selection:text-black"
+            className="w-full h-[580px] p-4 bg-transparent text-p4 font-mono text-xs leading-relaxed focus:outline-none resize-none selection:bg-p1 selection:text-black"
             spellCheck={false}
           />
         </div>
@@ -304,8 +306,47 @@ const ServerFiles = () => {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className="flex flex-col gap-5 max-w-6xl mx-auto w-full relative"
+      className="flex flex-col gap-5 w-full relative"
     >
+      {/* Page Header */}
+      <BreezePageHeader
+        caption="File Management"
+        title="Server Files"
+        description="Browse, edit, and upload server configuration files, plugins, and world directories."
+        icon={FolderOpen}
+      >
+        <div className="flex items-center gap-2">
+          <BreezeButton
+            variant="secondary"
+            size="sm"
+            icon={FilePlus}
+            onClick={() => setNewFileModal(true)}
+          >
+            New File
+          </BreezeButton>
+          <BreezeButton
+            variant="secondary"
+            size="sm"
+            icon={FolderPlus}
+            onClick={() => setNewFolderModal(true)}
+          >
+            New Folder
+          </BreezeButton>
+          <label>
+            <BreezeButton variant="primary" size="sm" icon={UploadCloud} as="span">
+              Upload
+            </BreezeButton>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              onChange={handleUploadInput}
+              className="hidden"
+            />
+          </label>
+        </div>
+      </BreezePageHeader>
+
       {/* Drag overlay notice */}
       {isDragging && (
         <div className="absolute inset-0 bg-s1/90 border-2 border-dashed border-p1 rounded-3xl z-40 flex flex-col items-center justify-center gap-3 backdrop-blur-sm pointer-events-none">
@@ -358,48 +399,25 @@ const ServerFiles = () => {
           ))}
         </div>
 
-        {/* Search & File Actions */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Search within folder */}
-          <div className="relative">
+        {/* Filter / Search within Directory */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 sm:flex-initial">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-p5/50 pointer-events-none" />
             <input
               type="text"
               placeholder="Filter files..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-8 pr-3 py-1.5 bg-s1 border-2 border-s3 rounded-xl text-xs text-p4 placeholder:text-p5/40 focus:outline-none focus:border-s4 transition-colors w-36 sm:w-44"
+              className="w-full sm:w-48 pl-8 pr-3 py-1.5 bg-s1 border-2 border-s3 rounded-xl text-xs text-p4 placeholder:text-p5/40 focus:outline-none focus:border-s4 transition-colors font-mono"
             />
           </div>
-
-          <BreezeButton
-            variant="secondary"
-            size="sm"
-            icon={FilePlus}
-            onClick={() => setNewFileModal(true)}
+          <button
+            onClick={() => fetchFiles(currentPath)}
+            className="p-1.5 rounded-xl border-2 border-s3 bg-s1 text-p5 hover:text-p4 hover:border-s4 transition-colors"
+            title="Refresh Directory"
           >
-            New File
-          </BreezeButton>
-          <BreezeButton
-            variant="secondary"
-            size="sm"
-            icon={FolderPlus}
-            onClick={() => setNewFolderModal(true)}
-          >
-            New Folder
-          </BreezeButton>
-          <label>
-            <BreezeButton variant="primary" size="sm" icon={UploadCloud} as="span">
-              Upload
-            </BreezeButton>
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              onChange={handleUploadInput}
-              className="hidden"
-            />
-          </label>
+            <RefreshCw size={14} />
+          </button>
         </div>
       </BreezeCard>
 
@@ -460,6 +478,15 @@ const ServerFiles = () => {
                     </td>
                     <td className="py-2.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
+                        {!file.isDirectory && (
+                          <button
+                            onClick={() => handleOpenFile(file)}
+                            className="p-1.5 rounded-xl text-p5 hover:text-p4 hover:bg-s5/50 transition-colors duration-300"
+                            title="Edit File"
+                          >
+                            <Edit size={14} />
+                          </button>
+                        )}
                         <button
                           onClick={() => {
                             setRenameModal(file);

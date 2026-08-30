@@ -5,6 +5,7 @@ import BreezeCard from '../../../components/ui/BreezeCard.jsx';
 import BreezeButton from '../../../components/ui/BreezeButton.jsx';
 import BreezeInput from '../../../components/ui/BreezeInput.jsx';
 import BreezeBadge from '../../../components/ui/BreezeBadge.jsx';
+import BreezePageHeader from '../../../components/ui/BreezePageHeader.jsx';
 import {
   Settings,
   RefreshCw,
@@ -122,7 +123,15 @@ const ServerSettings = () => {
     : 'Unassigned';
 
   return (
-    <div className="w-full max-w-6xl mx-auto flex flex-col gap-6">
+    <div className="w-full flex flex-col gap-6">
+      {/* Page Header */}
+      <BreezePageHeader
+        caption="Configuration"
+        title="Server Settings"
+        description="Manage server configuration, runtime options, hardware allocations, and lifecycle actions."
+        icon={Settings}
+      />
+
       {/* Notification Banner */}
       {statusMessage && (
         <div
@@ -137,14 +146,6 @@ const ServerSettings = () => {
           <span>{statusMessage.message}</span>
         </div>
       )}
-
-      {/* Page Heading */}
-      <div>
-        <h2 className="h6 text-p4 font-semibold">Server Settings</h2>
-        <p className="text-xs text-p5 mt-0.5">
-          Manage your server configuration, hardware allocations, and lifecycle actions.
-        </p>
-      </div>
 
       {/* ===== Top Section: 2-Column Balanced Grid ===== */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -278,7 +279,7 @@ const ServerSettings = () => {
                   <Globe size={14} className="text-p1" />
                   <span>Address</span>
                 </span>
-                <span className="font-medium text-xs text-p4 tracking-wide truncate max-w-[170px] select-all">
+                <span className="font-medium text-xs text-p4 font-mono tracking-wide truncate max-w-[170px] select-all">
                   {serverAddress}
                 </span>
               </div>

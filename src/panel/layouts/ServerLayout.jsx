@@ -4,6 +4,7 @@ import { useSocket } from '../context/SocketContext.jsx';
 import api from '../services/api.js';
 import BreezeBadge from '../../components/ui/BreezeBadge.jsx';
 import BreezeButton from '../../components/ui/BreezeButton.jsx';
+import SoftwareIcon from '../../components/ui/SoftwareIcons.jsx';
 import {
   Terminal,
   FolderOpen,
@@ -24,6 +25,7 @@ import {
   Menu,
   X,
   PanelLeft,
+  AlertCircle,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -38,6 +40,7 @@ const ServerLayout = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -56,12 +59,15 @@ const ServerLayout = () => {
     }
   }, [collapsed]);
 
-  // Keyboard shortcut Ctrl+B / Cmd+B to toggle sidebar
+  // Keyboard shortcut Ctrl+B / Cmd+B to toggle sidebar & Escape to close mobile drawer
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
         e.preventDefault();
         setCollapsed((prev) => !prev);
+      }
+      if (e.key === 'Escape') {
+        setMobileOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -112,9 +118,11 @@ const ServerLayout = () => {
     if (actionLoading) return;
     try {
       setActionLoading(action);
+      setErrorMessage(null);
       await api.post(`/servers/${server.id}/power`, { action });
     } catch (err) {
-      alert(`Power action failed: ${err.message}`);
+      setErrorMessage(`Power action "${action}" failed: ${err.message}`);
+      setTimeout(() => setErrorMessage(null), 5000);
     } finally {
       setActionLoading(null);
     }
@@ -172,7 +180,7 @@ const ServerLayout = () => {
       {/* ===== Mobile Backdrop ===== */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-200"
           onClick={() => setMobileOpen(false)}
         />
       )}
@@ -229,17 +237,17 @@ const ServerLayout = () => {
             </button>
           </div>
 
-          {/* Server Identity Card */}
+          {/* Server Identity Card in Sidebar */}
           {(!collapsed || mobileOpen) ? (
             <div className="p-3 rounded-2xl bg-s1/70 border border-s3/80 flex items-center gap-3">
               <div className="size-9 rounded-xl border border-s3 bg-s2 flex items-center justify-center p-1.5 flex-shrink-0 shadow-inner">
-                <img src="/images/detail-1.png" alt="" className="size-6 object-contain" />
+                <SoftwareIcon software={server.software} size={18} className="text-p1" />
               </div>
               <div className="min-w-0 flex-1">
                 <h2 className="text-xs font-bold text-p4 truncate" title={server.name}>
                   {server.name}
                 </h2>
-                <div className="mt-1 flex items-center">
+                <div className="mt-1 flex items-center gap-2">
                   <BreezeBadge
                     status={status}
                     pulse={isOnline || isStarting}
@@ -247,15 +255,18 @@ const ServerLayout = () => {
                   >
                     {status}
                   </BreezeBadge>
+                  <span className="text-[10px] text-p5/70 font-mono capitalize truncate">
+                    {server.software || 'Paper'} {server.minecraft_version || ''}
+                  </span>
                 </div>
               </div>
             </div>
           ) : (
             <div
               className="size-10 mx-auto rounded-xl border border-s3 bg-s1/80 flex items-center justify-center p-1.5 relative group cursor-default"
-              title={`${server.name} (${status})`}
+              title={`${server.name} (${status}) - ${server.software || 'Paper'} ${server.minecraft_version || ''}`}
             >
-              <img src="/images/detail-1.png" alt="" className="size-6 object-contain" />
+              <SoftwareIcon software={server.software} size={18} className="text-p1" />
               <span
                 className={clsx(
                   'absolute -top-0.5 -right-0.5 size-2.5 rounded-full border-2 border-s2',
@@ -269,8 +280,8 @@ const ServerLayout = () => {
         {/* Sidebar Content / Navigation Items */}
         <nav className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-1.5">
           {(!collapsed || mobileOpen) && (
-            <p className="caption pl-3 mb-2 text-xs font-bold text-p3">
-              Server
+            <p className="caption pl-3 mb-1 text-[11px] font-bold text-p3 uppercase tracking-wider">
+              Server Workspace
             </p>
           )}
 
@@ -356,20 +367,28 @@ const ServerLayout = () => {
 
         {/* Page Content Centered */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 flex flex-col items-center">
-          <div className="w-full max-w-6xl mx-auto flex flex-col flex-1">
-            {/* ===== Server Header with smooth blended banner ===== */}
+          <div className="w-full max-w-7xl mx-auto flex flex-col flex-1">
+            {/* Error Notification Banner if power action fails */}
+            {errorMessage && (
+              <div className="mb-4 p-3.5 rounded-2xl bg-red-500/10 border-2 border-red-500/30 flex items-center gap-2.5 text-xs text-red-400">
+                <AlertCircle size={16} className="flex-shrink-0" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
+            {/* ===== Persistent Global Server Header ===== */}
             <div className="relative border-2 border-s3 rounded-2xl bg-s2 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 overflow-hidden">
               {/* Banner Image with high visibility and smooth dark vignette blend */}
               <div
-                className="absolute inset-0 bg-cover bg-[center_30%] opacity-65 pointer-events-none"
+                className="absolute inset-0 bg-cover bg-[center_30%] opacity-50 pointer-events-none"
                 style={{ backgroundImage: "url('/images/banners/server-banner.jpeg')" }}
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-s1/85 via-s1/50 to-s1/65 pointer-events-none" />
-              <div className="absolute inset-0 bg-gradient-to-t from-s1/60 via-transparent to-transparent pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-r from-s1/90 via-s1/60 to-s1/70 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-t from-s1/70 via-transparent to-transparent pointer-events-none" />
 
               <div className="relative z-10 flex items-center gap-3.5 min-w-0">
                 <div className="size-11 rounded-xl border border-s3 bg-s1/90 backdrop-blur-md flex items-center justify-center p-1.5 flex-shrink-0 shadow-md">
-                  <img src="/images/detail-1.png" alt="" className="size-7 object-contain" />
+                  <SoftwareIcon software={server.software} size={22} className="text-p1" />
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-3 flex-wrap">
@@ -377,9 +396,12 @@ const ServerLayout = () => {
                     <BreezeBadge status={status} pulse={isOnline || isStarting}>
                       {status}
                     </BreezeBadge>
+                    <span className="text-xs text-p5 font-mono px-2 py-0.5 rounded-lg bg-s1/80 border border-s3 capitalize hidden md:inline">
+                      {server.software || 'Paper'} {server.minecraft_version || ''}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 mt-1">
-                    <p className="text-xs text-p4/90 font-medium tracking-wide truncate drop-shadow">{serverAddress}</p>
+                    <p className="text-xs text-p4/90 font-mono tracking-wide truncate drop-shadow">{serverAddress}</p>
                     {server?.allocation && (
                       <button
                         onClick={copyAddress}
@@ -397,14 +419,15 @@ const ServerLayout = () => {
                 </div>
               </div>
 
-              {/* Power Controls */}
+              {/* State-Aware Power Controls */}
               <div className="relative z-10 flex items-center gap-2 flex-wrap sm:flex-nowrap bg-s1/50 backdrop-blur-sm p-1 rounded-2xl border border-s3/40">
                 <BreezeButton
                   variant="primary"
                   size="sm"
                   icon={actionLoading === 'start' ? Loader2 : Play}
+                  loading={actionLoading === 'start'}
                   onClick={() => handlePower('start')}
-                  disabled={isOnline || isStarting}
+                  disabled={isOnline || isStarting || !!actionLoading}
                 >
                   Start
                 </BreezeButton>
@@ -412,8 +435,9 @@ const ServerLayout = () => {
                   variant="warning"
                   size="sm"
                   icon={actionLoading === 'restart' ? Loader2 : RotateCcw}
+                  loading={actionLoading === 'restart'}
                   onClick={() => handlePower('restart')}
-                  disabled={!isOnline}
+                  disabled={!isOnline || !!actionLoading}
                 >
                   Restart
                 </BreezeButton>
@@ -421,8 +445,9 @@ const ServerLayout = () => {
                   variant="destructive"
                   size="sm"
                   icon={actionLoading === 'stop' ? Loader2 : Square}
+                  loading={actionLoading === 'stop'}
                   onClick={() => handlePower('stop')}
-                  disabled={!isOnline && !isStarting}
+                  disabled={(!isOnline && !isStarting) || !!actionLoading}
                 >
                   Stop
                 </BreezeButton>
@@ -430,8 +455,9 @@ const ServerLayout = () => {
                   variant="destructive"
                   size="sm"
                   icon={actionLoading === 'kill' ? Loader2 : XOctagon}
+                  loading={actionLoading === 'kill'}
                   onClick={() => handlePower('kill')}
-                  disabled={!isOnline && !isStarting && !isStopping}
+                  disabled={(!isOnline && !isStarting && !isStopping) || !!actionLoading}
                 >
                   Kill
                 </BreezeButton>

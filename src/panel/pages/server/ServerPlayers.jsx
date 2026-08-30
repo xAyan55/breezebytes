@@ -5,6 +5,7 @@ import BreezeCard from '../../../components/ui/BreezeCard.jsx';
 import BreezeButton from '../../../components/ui/BreezeButton.jsx';
 import BreezeModal from '../../../components/ui/BreezeModal.jsx';
 import BreezeInput from '../../../components/ui/BreezeInput.jsx';
+import BreezePageHeader from '../../../components/ui/BreezePageHeader.jsx';
 import {
   ShieldAlert,
   ShieldCheck,
@@ -142,7 +143,15 @@ const ServerPlayers = () => {
   ];
 
   return (
-    <div className="flex flex-col gap-5 max-w-6xl mx-auto w-full">
+    <div className="flex flex-col gap-5 w-full">
+      {/* Page Header */}
+      <BreezePageHeader
+        caption="Player Access"
+        title="Player Management"
+        description="Manage server operators, whitelist permissions, and player restrictions."
+        icon={Users}
+      />
+
       {/* Notification Banner */}
       {statusMessage && (
         <div

@@ -83,7 +83,7 @@ const ServerNetwork = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6 max-w-6xl mx-auto w-full">
+    <div className="flex flex-col gap-6 w-full">
       <BreezePageHeader
         caption="Network & Ports"
         title="Port Allocations"
@@ -141,7 +141,7 @@ const ServerNetwork = () => {
                     <p className="text-xs text-p5 font-mono">Port #{a.port}</p>
                     <button
                       onClick={() => copyAddress(fullAddress, a.id)}
-                      className="p-1 rounded-md text-p5/70 hover:text-p1 transition-colors"
+                      className="p-1 rounded-md text-p5/70 hover:text-p1 transition-colors cursor-pointer"
                       title="Copy Address"
                     >
                       {copiedId === a.id ? (
@@ -167,7 +167,7 @@ const ServerNetwork = () => {
                   {!isPrimary && (
                     <button
                       onClick={() => handleUnassign(a.id)}
-                      className="p-1.5 rounded-xl text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                      className="p-1.5 rounded-xl text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
                       title="Unassign Port"
                     >
                       <Trash2 size={15} />

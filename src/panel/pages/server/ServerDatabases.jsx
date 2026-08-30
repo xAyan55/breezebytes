@@ -90,7 +90,7 @@ const ServerDatabases = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6 max-w-6xl mx-auto w-full">
+    <div className="flex flex-col gap-6 w-full">
       <BreezePageHeader
         caption="Persistent Storage"
         title="Managed Databases"
@@ -167,7 +167,7 @@ const ServerDatabases = () => {
               <div className="pt-3 border-t-2 border-s3 flex items-center justify-between">
                 <button
                   onClick={() => copyDbDetails(db)}
-                  className="flex items-center gap-1 text-[11px] font-sans font-semibold text-p1 hover:underline"
+                  className="flex items-center gap-1 text-[11px] font-sans font-semibold text-p1 hover:underline cursor-pointer"
                 >
                   {cardCopiedId === db.id ? (
                     <>
@@ -183,7 +183,7 @@ const ServerDatabases = () => {
                 </button>
                 <button
                   onClick={() => handleDelete(db.id, db.database_name)}
-                  className="p-1.5 rounded-xl text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                  className="p-1.5 rounded-xl text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
                   title="Drop Database"
                 >
                   <Trash2 size={15} />
