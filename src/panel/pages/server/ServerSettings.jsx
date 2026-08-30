@@ -21,38 +21,47 @@ import {
   Hash,
   Check,
   Copy,
+  AlertCircle,
 } from 'lucide-react';
+import clsx from 'clsx';
 
 const ServerSettings = () => {
   const { server, fetchServer } = useOutletContext();
   const navigate = useNavigate();
   const [name, setName] = useState(server?.name || '');
   const [description, setDescription] = useState(server?.description || '');
-  const [autoRestart, setAutoRestart] = useState(server?.auto_restart === 1 || server?.auto_restart === true);
+  const [autoRestart, setAutoRestart] = useState(
+    server?.auto_restart === 1 || server?.auto_restart === true,
+  );
   const [saving, setSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
   const [reinstalling, setReinstalling] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
+  const [statusMessage, setStatusMessage] = useState(null);
+
+  const showNotification = (type, message) => {
+    setStatusMessage({ type, message });
+    setTimeout(() => setStatusMessage(null), 3500);
+  };
 
   const handleSave = async (e) => {
     e.preventDefault();
     try {
       setSaving(true);
-      setSaveSuccess(false);
       const res = await api.patch(`/servers/${server.id}`, {
-        name,
-        description,
+        name: name.trim(),
+        description: description.trim(),
         auto_restart: autoRestart,
       });
       if (res.success) {
-        setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 3000);
+        showNotification('success', 'Server settings saved successfully.');
         fetchServer();
+      } else {
+        throw new Error(res.error?.message || 'Failed to update settings');
       }
     } catch (err) {
-      alert(`Save failed: ${err.message}`);
+      showNotification('error', `Save failed: ${err.message}`);
     } finally {
       setSaving(false);
     }
@@ -71,7 +80,7 @@ const ServerSettings = () => {
       await api.post(`/servers/${server.id}/reinstall`);
       navigate(`/panel/servers/${server.id}/console`);
     } catch (err) {
-      alert(`Reinstall failed: ${err.message}`);
+      showNotification('error', `Reinstall failed: ${err.message}`);
     } finally {
       setReinstalling(false);
     }
@@ -79,7 +88,7 @@ const ServerSettings = () => {
 
   const handleDelete = async () => {
     if (deleteConfirm !== server.name) {
-      alert(`Please type "${server.name}" exactly to confirm deletion.`);
+      showNotification('error', `Please type "${server.name}" exactly to confirm deletion.`);
       return;
     }
     try {
@@ -87,7 +96,7 @@ const ServerSettings = () => {
       await api.delete(`/servers/${server.id}`);
       navigate('/panel/servers');
     } catch (err) {
-      alert(`Deletion failed: ${err.message}`);
+      showNotification('error', `Deletion failed: ${err.message}`);
       setDeleting(false);
     }
   };
@@ -113,7 +122,22 @@ const ServerSettings = () => {
     : 'Unassigned';
 
   return (
-    <div className="w-full max-w-5xl mx-auto flex flex-col gap-6">
+    <div className="w-full max-w-6xl mx-auto flex flex-col gap-6">
+      {/* Notification Banner */}
+      {statusMessage && (
+        <div
+          className={clsx(
+            'p-3.5 rounded-2xl border-2 text-xs flex items-center gap-2.5',
+            statusMessage.type === 'success'
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+              : 'bg-red-500/10 border-red-500/30 text-red-400',
+          )}
+        >
+          {statusMessage.type === 'success' ? <Check size={16} /> : <AlertCircle size={16} />}
+          <span>{statusMessage.message}</span>
+        </div>
+      )}
+
       {/* Page Heading */}
       <div>
         <h2 className="h6 text-p4 font-semibold">Server Settings</h2>
@@ -132,11 +156,6 @@ const ServerSettings = () => {
                 <Settings size={18} className="text-p1" />
                 <h3 className="base-bold text-p4">General Settings</h3>
               </div>
-              {saveSuccess && (
-                <span className="flex items-center gap-1 text-xs text-emerald-400 font-semibold animate-pulse">
-                  <Check size={14} /> Saved!
-                </span>
-              )}
             </div>
 
             <BreezeInput
@@ -168,7 +187,7 @@ const ServerSettings = () => {
               <label htmlFor="autoRestart" className="text-xs text-p4 font-medium cursor-pointer leading-relaxed">
                 <span className="font-semibold block text-p4">Auto-restart server on crash</span>
                 <span className="text-p5/70 text-[11px] block mt-0.5">
-                  Automatically restarts the server if the Java process crashes or terminates unexpectedly.
+                  Automatically restarts the server if the Java process terminates unexpectedly or runs out of memory.
                 </span>
               </label>
             </div>
@@ -329,7 +348,7 @@ const ServerSettings = () => {
               placeholder={server.name}
               value={deleteConfirm}
               onChange={(e) => setDeleteConfirm(e.target.value)}
-              className="flex-1 bg-s1 border-2 border-red-500/30 rounded-2xl px-4 py-2 text-xs font-mono text-p4 placeholder:text-p5/30 focus:outline-none focus:border-red-500 transition-all duration-500"
+              className="flex-1 bg-s1 border-2 border-red-500/30 rounded-2xl px-4 py-2 text-xs font-mono text-p4 placeholder:text-p5/30 focus:outline-none focus:border-red-500 transition-all duration-300"
             />
             <BreezeButton
               variant="destructive"

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useSocket } from '../../context/SocketContext.jsx';
 import api from '../../services/api.js';
@@ -19,8 +19,11 @@ import {
   Network,
   Layers,
   Wifi,
+  ChevronDown,
 } from 'lucide-react';
 import clsx from 'clsx';
+
+const MAX_LOG_LINES = 1000;
 
 const ServerConsole = () => {
   const { server, status } = useOutletContext();
@@ -30,6 +33,7 @@ const ServerConsole = () => {
   const [commandHistory, setCommandHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [autoScroll, setAutoScroll] = useState(true);
+  const [userScrolledUp, setUserScrolledUp] = useState(false);
   const [copied, setCopied] = useState(false);
   const [addrCopied, setAddrCopied] = useState(false);
   const [stats, setStats] = useState({
@@ -41,8 +45,9 @@ const ServerConsole = () => {
     uptime: 0,
   });
 
-  const terminalEndRef = useRef(null);
+  const terminalContainerRef = useRef(null);
 
+  // Initial load and WebSocket subscription
   useEffect(() => {
     let isMounted = true;
 
@@ -50,7 +55,7 @@ const ServerConsole = () => {
       try {
         const res = await api.get(`/servers/${server.id}/logs`);
         if (isMounted && res.success && Array.isArray(res.data)) {
-          setLogs(res.data);
+          setLogs(res.data.slice(-MAX_LOG_LINES));
         }
       } catch {
         // ignore
@@ -61,9 +66,9 @@ const ServerConsole = () => {
 
     const unsubConsole = subscribe(`server:${server.id}:console`, (event, data) => {
       if (event === 'console_line' && data) {
-        setLogs((prev) => [...prev.slice(-1000), data]);
+        setLogs((prev) => [...prev.slice(-(MAX_LOG_LINES - 1)), data]);
       } else if (event === 'console_history' && Array.isArray(data)) {
-        setLogs(data);
+        setLogs(data.slice(-MAX_LOG_LINES));
       }
     });
 
@@ -85,11 +90,32 @@ const ServerConsole = () => {
     };
   }, [server.id, server.memory, server.disk, subscribe]);
 
-  useEffect(() => {
-    if (autoScroll && terminalEndRef.current) {
-      terminalEndRef.current.scrollTop = terminalEndRef.current.scrollHeight;
+  // Handle scroll detection for user manual scrolling
+  const handleScroll = useCallback(() => {
+    if (!terminalContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = terminalContainerRef.current;
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 40;
+
+    if (isAtBottom) {
+      setUserScrolledUp(false);
+    } else {
+      setUserScrolledUp(true);
     }
-  }, [logs, autoScroll]);
+  }, []);
+
+  // Auto-scroll effect
+  useEffect(() => {
+    if (autoScroll && !userScrolledUp && terminalContainerRef.current) {
+      terminalContainerRef.current.scrollTop = terminalContainerRef.current.scrollHeight;
+    }
+  }, [logs, autoScroll, userScrolledUp]);
+
+  const scrollToBottom = () => {
+    setUserScrolledUp(false);
+    if (terminalContainerRef.current) {
+      terminalContainerRef.current.scrollTop = terminalContainerRef.current.scrollHeight;
+    }
+  };
 
   const handleSendCommand = (e) => {
     e?.preventDefault();
@@ -99,6 +125,7 @@ const ServerConsole = () => {
     setCommandHistory((prev) => [...prev, command]);
     setHistoryIndex(-1);
     setCommand('');
+    scrollToBottom();
   };
 
   const handleKeyDown = (e) => {
@@ -127,7 +154,7 @@ const ServerConsole = () => {
   const clearConsole = () => setLogs([]);
 
   const copyConsole = () => {
-    const text = logs.map((l) => l.text || '').join('\n');
+    const text = logs.map((l) => (typeof l === 'string' ? l : l.text || '')).join('\n');
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -168,7 +195,7 @@ const ServerConsole = () => {
   };
 
   const formatLogLine = (line) => {
-    const text = line?.text || '';
+    const text = typeof line === 'string' ? line : line?.text || '';
     if (text.includes('WARN') || text.includes('warning') || text.includes('WARNING')) {
       return <span className="text-amber-400">{text}</span>;
     }
@@ -204,7 +231,7 @@ const ServerConsole = () => {
       {/* ===== Left: Dominant Console & Terminal Workspace ===== */}
       <div className="flex flex-col gap-4 min-w-0">
         {/* Terminal Box */}
-        <div className="border-2 border-s3 rounded-2xl bg-s1 flex flex-col overflow-hidden min-w-0">
+        <div className="border-2 border-s3 rounded-2xl bg-s1 flex flex-col overflow-hidden min-w-0 relative">
           {/* Terminal Header / Toolbar */}
           <div className="px-4 py-3 bg-s2 border-b-2 border-s3 flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2.5">
@@ -256,10 +283,11 @@ const ServerConsole = () => {
             </div>
           </div>
 
-          {/* Terminal Screen Output (Scaled 1.367x to 480px) */}
+          {/* Terminal Screen Output */}
           <div
-            ref={terminalEndRef}
-            className="p-4 font-mono text-xs sm:text-[13px] overflow-y-auto h-[480px] flex flex-col gap-1 select-text bg-[#07080c] text-zinc-300 scroll-smooth"
+            ref={terminalContainerRef}
+            onScroll={handleScroll}
+            className="p-4 font-mono text-xs sm:text-[13px] overflow-y-auto h-[480px] flex flex-col gap-1 select-text bg-[#07080c] text-zinc-300 scroll-smooth relative"
           >
             {logs.length === 0 ? (
               <div className="my-auto flex flex-col items-center justify-center gap-2 text-center p-6 select-none">
@@ -276,6 +304,17 @@ const ServerConsole = () => {
                   {formatLogLine(log)}
                 </div>
               ))
+            )}
+
+            {/* Jump to Latest Floating Button when manually scrolled up */}
+            {userScrolledUp && (
+              <button
+                onClick={scrollToBottom}
+                className="sticky bottom-2 self-center flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-s4 text-p4 text-xs font-bold shadow-500 border border-s4 hover:scale-105 transition-all duration-200 cursor-pointer z-20"
+              >
+                <ChevronDown size={14} className="animate-bounce" />
+                <span>Jump to latest</span>
+              </button>
             )}
           </div>
 

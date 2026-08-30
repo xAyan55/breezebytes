@@ -6,7 +6,9 @@ import BreezeModal from '../../../components/ui/BreezeModal.jsx';
 import BreezeInput from '../../../components/ui/BreezeInput.jsx';
 import BreezePageHeader from '../../../components/ui/BreezePageHeader.jsx';
 import BreezeBadge from '../../../components/ui/BreezeBadge.jsx';
-import { HardDrive, PlusCircle, Loader2 } from 'lucide-react';
+import { BreezeCardSkeleton } from '../../../components/ui/BreezeSkeleton.jsx';
+import { HardDrive, PlusCircle, Check, AlertCircle } from 'lucide-react';
+import clsx from 'clsx';
 
 const AdminNodes = () => {
   const [nodes, setNodes] = useState([]);
@@ -19,6 +21,12 @@ const AdminNodes = () => {
     memory_total: 24576,
     disk_total: 50000,
   });
+  const [statusMessage, setStatusMessage] = useState(null);
+
+  const showNotification = (type, message) => {
+    setStatusMessage({ type, message });
+    setTimeout(() => setStatusMessage(null), 3500);
+  };
 
   const fetchNodes = useCallback(async () => {
     try {
@@ -29,6 +37,7 @@ const AdminNodes = () => {
       }
     } catch (err) {
       console.error('Failed to load nodes:', err);
+      showNotification('error', err.message || 'Failed to fetch cluster nodes');
     } finally {
       setLoading(false);
     }
@@ -44,18 +53,19 @@ const AdminNodes = () => {
       await api.post('/admin/nodes', formData);
       setModalOpen(false);
       setFormData({ name: '', fqdn: '127.0.0.1', port: 3001, memory_total: 24576, disk_total: 50000 });
+      showNotification('success', 'Cluster node registered.');
       fetchNodes();
     } catch (err) {
-      alert(`Node registration failed: ${err.message}`);
+      showNotification('error', `Node registration failed: ${err.message}`);
     }
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 max-w-6xl mx-auto w-full">
       <BreezePageHeader
         caption="Administration"
         title="Cluster Nodes"
-        description="Manage VPS host daemon nodes and capacity distribution."
+        description="Manage host daemon nodes, daemon health, and cluster capacity distribution."
         icon={HardDrive}
       >
         <BreezeButton
@@ -68,10 +78,23 @@ const AdminNodes = () => {
         </BreezeButton>
       </BreezePageHeader>
 
-      {loading ? (
-        <div className="flex justify-center py-12 text-p5">
-          <Loader2 className="animate-spin text-p1 size-8" />
+      {/* Notification Banner */}
+      {statusMessage && (
+        <div
+          className={clsx(
+            'p-3.5 rounded-2xl border-2 text-xs flex items-center gap-2.5',
+            statusMessage.type === 'success'
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+              : 'bg-red-500/10 border-red-500/30 text-red-400',
+          )}
+        >
+          {statusMessage.type === 'success' ? <Check size={16} /> : <AlertCircle size={16} />}
+          <span>{statusMessage.message}</span>
         </div>
+      )}
+
+      {loading ? (
+        <BreezeCardSkeleton count={2} />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {nodes.map((node) => (
@@ -81,8 +104,10 @@ const AdminNodes = () => {
             >
               <div>
                 <div className="flex items-start justify-between gap-2 mb-2">
-                  <h3 className="base-bold text-p4 flex items-center gap-2">
-                    <HardDrive size={20} className="text-p1" />
+                  <h3 className="base-bold text-p4 flex items-center gap-2.5">
+                    <div className="size-8 rounded-xl bg-s1 border border-s3 flex items-center justify-center text-p1">
+                      <HardDrive size={16} />
+                    </div>
                     <span>{node.name}</span>
                   </h3>
                   <BreezeBadge status="online" pulse>
@@ -90,23 +115,23 @@ const AdminNodes = () => {
                   </BreezeBadge>
                 </div>
 
-                <p className="small-2 text-p5 font-mono">
+                <p className="text-xs text-p5 font-mono pl-1">
                   {node.fqdn}:{node.port}
                 </p>
 
                 <div className="grid grid-cols-2 gap-3 mt-4 text-xs font-mono">
                   <div className="p-3 rounded-2xl bg-s1 border-2 border-s3">
-                    <p className="small-compact text-p5 uppercase font-sans">Servers</p>
+                    <p className="text-[10px] text-p5 uppercase font-semibold font-sans">Instances</p>
                     <p className="text-sm font-bold text-p4 mt-0.5">{node.serversCount || 0}</p>
                   </div>
                   <div className="p-3 rounded-2xl bg-s1 border-2 border-s3">
-                    <p className="small-compact text-p5 uppercase font-sans">Allocations</p>
+                    <p className="text-[10px] text-p5 uppercase font-semibold font-sans">Allocations</p>
                     <p className="text-sm font-bold text-p1 mt-0.5">{node.usedAllocations || 0} / {node.allocationsCount || 0}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="pt-4 border-t-2 border-s3 flex items-center justify-between small-2 text-p5">
+              <div className="pt-4 border-t-2 border-s3 flex items-center justify-between text-xs text-p5">
                 <span>{(node.memory_total / 1024).toFixed(0)} GB RAM Total</span>
                 <span>{(node.disk_total / 1024).toFixed(0)} GB Storage</span>
               </div>
@@ -162,13 +187,13 @@ const AdminNodes = () => {
           <div className="flex justify-end gap-2 mt-2">
             <BreezeButton
               variant="ghost"
-              size="md"
+              size="sm"
               type="button"
               onClick={() => setModalOpen(false)}
             >
               Cancel
             </BreezeButton>
-            <BreezeButton variant="primary" size="md" type="submit">
+            <BreezeButton variant="primary" size="sm" type="submit">
               Register Node
             </BreezeButton>
           </div>

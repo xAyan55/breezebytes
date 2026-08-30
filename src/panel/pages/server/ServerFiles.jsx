@@ -15,16 +15,23 @@ import {
   Edit,
   Save,
   ArrowLeft,
-  Loader2,
   ChevronRight,
+  Search,
+  Check,
+  AlertCircle,
+  FileText,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { BreezeSkeleton } from '../../../components/ui/BreezeSkeleton.jsx';
 
 const ServerFiles = () => {
   const { server } = useOutletContext();
   const [currentPath, setCurrentPath] = useState('');
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
+  const [statusMessage, setStatusMessage] = useState(null);
 
   const [editingFile, setEditingFile] = useState(null);
   const [fileContent, setFileContent] = useState('');
@@ -39,6 +46,11 @@ const ServerFiles = () => {
 
   const fileInputRef = useRef(null);
 
+  const showNotification = (type, message) => {
+    setStatusMessage({ type, message });
+    setTimeout(() => setStatusMessage(null), 3500);
+  };
+
   const fetchFiles = useCallback(async (path = '') => {
     try {
       setLoading(true);
@@ -48,6 +60,7 @@ const ServerFiles = () => {
       }
     } catch (err) {
       console.error('Failed to load files:', err);
+      showNotification('error', err.message || 'Failed to list files');
     } finally {
       setLoading(false);
     }
@@ -60,16 +73,19 @@ const ServerFiles = () => {
   const handleOpenFolder = (folderName) => {
     const newPath = currentPath ? `${currentPath}/${folderName}` : folderName;
     setCurrentPath(newPath);
+    setSearch('');
   };
 
   const handleBreadcrumbClick = (index) => {
     if (index === -1) {
       setCurrentPath('');
+      setSearch('');
       return;
     }
     const parts = currentPath.split('/');
     const newPath = parts.slice(0, index + 1).join('/');
     setCurrentPath(newPath);
+    setSearch('');
   };
 
   const handleOpenFile = async (file) => {
@@ -82,7 +98,7 @@ const ServerFiles = () => {
         setFileContent(res.data.content || '');
       }
     } catch (err) {
-      alert(`Cannot open file: ${err.message}`);
+      showNotification('error', `Cannot open file: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -96,9 +112,9 @@ const ServerFiles = () => {
         path: editingFile,
         content: fileContent,
       });
-      alert('File saved successfully!');
+      showNotification('success', 'File saved successfully!');
     } catch (err) {
-      alert(`Failed to save file: ${err.message}`);
+      showNotification('error', `Failed to save file: ${err.message}`);
     } finally {
       setSavingFile(false);
     }
@@ -107,21 +123,22 @@ const ServerFiles = () => {
   const handleCreateFolder = async (e) => {
     e.preventDefault();
     if (!newFolderName.trim()) return;
-    const folderPath = currentPath ? `${currentPath}/${newFolderName}` : newFolderName;
+    const folderPath = currentPath ? `${currentPath}/${newFolderName.trim()}` : newFolderName.trim();
     try {
       await api.post(`/servers/${server.id}/files/folder`, { path: folderPath });
       setNewFolderModal(false);
       setNewFolderName('');
+      showNotification('success', 'Folder created.');
       fetchFiles(currentPath);
     } catch (err) {
-      alert(`Folder creation failed: ${err.message}`);
+      showNotification('error', `Folder creation failed: ${err.message}`);
     }
   };
 
   const handleCreateFile = async (e) => {
     e.preventDefault();
     if (!newFileName.trim()) return;
-    const filePath = currentPath ? `${currentPath}/${newFileName}` : newFileName;
+    const filePath = currentPath ? `${currentPath}/${newFileName.trim()}` : newFileName.trim();
     try {
       await api.post(`/servers/${server.id}/files/write`, { path: filePath, content: '' });
       setNewFileModal(false);
@@ -129,19 +146,21 @@ const ServerFiles = () => {
       fetchFiles(currentPath);
       setEditingFile(filePath);
       setFileContent('');
+      showNotification('success', 'File created.');
     } catch (err) {
-      alert(`File creation failed: ${err.message}`);
+      showNotification('error', `File creation failed: ${err.message}`);
     }
   };
 
   const handleDelete = async (file) => {
     const targetPath = currentPath ? `${currentPath}/${file.name}` : file.name;
-    if (!confirm(`Are you sure you want to delete ${file.name}?`)) return;
+    if (!confirm(`Are you sure you want to delete "${file.name}"?`)) return;
     try {
       await api.delete(`/servers/${server.id}/files`, { path: targetPath });
+      showNotification('success', 'Item deleted.');
       fetchFiles(currentPath);
     } catch (err) {
-      alert(`Failed to delete: ${err.message}`);
+      showNotification('error', `Failed to delete: ${err.message}`);
     }
   };
 
@@ -149,19 +168,19 @@ const ServerFiles = () => {
     e.preventDefault();
     if (!renameTarget.trim() || !renameModal) return;
     const oldPath = currentPath ? `${currentPath}/${renameModal.name}` : renameModal.name;
-    const newPath = currentPath ? `${currentPath}/${renameTarget}` : renameTarget;
+    const newPath = currentPath ? `${currentPath}/${renameTarget.trim()}` : renameTarget.trim();
     try {
       await api.post(`/servers/${server.id}/files/rename`, { oldPath, newPath });
       setRenameModal(null);
       setRenameTarget('');
+      showNotification('success', 'Renamed successfully.');
       fetchFiles(currentPath);
     } catch (err) {
-      alert(`Rename failed: ${err.message}`);
+      showNotification('error', `Rename failed: ${err.message}`);
     }
   };
 
-  const handleUpload = async (e) => {
-    const uploaded = e.target.files;
+  const uploadFiles = async (uploaded) => {
     if (!uploaded || uploaded.length === 0) return;
     const formData = new FormData();
     formData.append('directory', currentPath);
@@ -171,12 +190,39 @@ const ServerFiles = () => {
     try {
       setLoading(true);
       await api.post(`/servers/${server.id}/files/upload`, formData);
+      showNotification('success', `Uploaded ${uploaded.length} file(s).`);
       fetchFiles(currentPath);
     } catch (err) {
-      alert(`Upload failed: ${err.message}`);
+      showNotification('error', `Upload failed: ${err.message}`);
     } finally {
       setLoading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleUploadInput = (e) => {
+    uploadFiles(e.target.files);
+  };
+
+  // Drag & drop handlers
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      uploadFiles(e.dataTransfer.files);
     }
   };
 
@@ -190,31 +236,36 @@ const ServerFiles = () => {
 
   const pathParts = currentPath.split('/').filter(Boolean);
 
+  const filteredFiles = files.filter((f) =>
+    f.name.toLowerCase().includes(search.toLowerCase()),
+  );
+
   // File Editor View
   if (editingFile) {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 max-w-6xl mx-auto w-full">
+        {/* Editor Toolbar */}
         <BreezeCard className="p-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => {
                 setEditingFile(null);
                 fetchFiles(currentPath);
               }}
-              className="p-2 rounded-2xl border-2 border-s3 bg-s1 text-p5 hover:text-p4 hover:border-s4 transition-all duration-500"
-              title="Back to Files"
+              className="p-2 rounded-2xl border-2 border-s3 bg-s1 text-p5 hover:text-p4 hover:border-s4 transition-all duration-300 flex-shrink-0"
+              title="Back to Directory"
             >
               <ArrowLeft size={16} />
             </button>
-            <div>
-              <p className="small-compact font-bold text-p4 font-mono">{editingFile}</p>
-              <p className="small-2 text-p5">Text / Config Editor</p>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-p4 font-mono truncate">{editingFile}</p>
+              <p className="text-[11px] text-p5">Text / Config Editor</p>
             </div>
           </div>
           <BreezeButton
             variant="primary"
-            size="md"
-            icon={savingFile ? Loader2 : Save}
+            size="sm"
+            icon={Save}
             loading={savingFile}
             onClick={handleSaveFile}
           >
@@ -222,7 +273,21 @@ const ServerFiles = () => {
           </BreezeButton>
         </BreezeCard>
 
-        <div className="border-2 border-s3 rounded-3xl bg-s1 overflow-hidden">
+        {statusMessage && (
+          <div
+            className={clsx(
+              'p-3 rounded-2xl border-2 text-xs flex items-center gap-2',
+              statusMessage.type === 'success'
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                : 'bg-red-500/10 border-red-500/30 text-red-400',
+            )}
+          >
+            {statusMessage.type === 'success' ? <Check size={14} /> : <AlertCircle size={14} />}
+            <span>{statusMessage.message}</span>
+          </div>
+        )}
+
+        <div className="border-2 border-s3 rounded-3xl bg-[#07080c] overflow-hidden">
           <textarea
             value={fileContent}
             onChange={(e) => setFileContent(e.target.value)}
@@ -235,28 +300,56 @@ const ServerFiles = () => {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className="flex flex-col gap-5 max-w-6xl mx-auto w-full relative"
+    >
+      {/* Drag overlay notice */}
+      {isDragging && (
+        <div className="absolute inset-0 bg-s1/90 border-2 border-dashed border-p1 rounded-3xl z-40 flex flex-col items-center justify-center gap-3 backdrop-blur-sm pointer-events-none">
+          <UploadCloud size={36} className="text-p1 animate-bounce" />
+          <p className="text-sm font-bold text-p4">Drop files here to upload to /{currentPath || 'root'}</p>
+        </div>
+      )}
+
+      {/* Status Notice */}
+      {statusMessage && (
+        <div
+          className={clsx(
+            'p-3.5 rounded-2xl border-2 text-xs flex items-center gap-2.5',
+            statusMessage.type === 'success'
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+              : 'bg-red-500/10 border-red-500/30 text-red-400',
+          )}
+        >
+          {statusMessage.type === 'success' ? <Check size={16} /> : <AlertCircle size={16} />}
+          <span>{statusMessage.message}</span>
+        </div>
+      )}
+
       {/* Toolbar & Breadcrumbs */}
-      <BreezeCard className="p-4 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+      <BreezeCard className="p-3.5 flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
         {/* Breadcrumbs */}
-        <div className="flex items-center gap-1.5 small-compact font-mono overflow-x-auto max-w-full">
+        <div className="flex items-center gap-1 text-xs font-mono overflow-x-auto max-w-full py-0.5">
           <button
             onClick={() => handleBreadcrumbClick(-1)}
             className={clsx(
-              'px-2 py-1 rounded-xl hover:bg-s5/40 transition-colors duration-500',
-              currentPath === '' ? 'text-p1 font-bold' : 'text-p5',
+              'px-2.5 py-1 rounded-xl hover:bg-s5/50 transition-colors duration-300 font-semibold',
+              currentPath === '' ? 'text-p1 bg-s4/20 border border-s4/40' : 'text-p5',
             )}
           >
             /root
           </button>
           {pathParts.map((part, idx) => (
-            <div key={idx} className="flex items-center gap-1.5">
-              <ChevronRight size={12} className="text-s3" />
+            <div key={idx} className="flex items-center gap-1">
+              <ChevronRight size={13} className="text-s3 flex-shrink-0" />
               <button
                 onClick={() => handleBreadcrumbClick(idx)}
                 className={clsx(
-                  'px-2 py-1 rounded-xl hover:bg-s5/40 transition-colors duration-500',
-                  idx === pathParts.length - 1 ? 'text-p1 font-bold' : 'text-p5',
+                  'px-2.5 py-1 rounded-xl hover:bg-s5/50 transition-colors duration-300 truncate max-w-[150px]',
+                  idx === pathParts.length - 1 ? 'text-p1 bg-s4/20 border border-s4/40 font-semibold' : 'text-p5',
                 )}
               >
                 {part}
@@ -265,8 +358,20 @@ const ServerFiles = () => {
           ))}
         </div>
 
-        {/* File Actions */}
+        {/* Search & File Actions */}
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Search within folder */}
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-p5/50 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Filter files..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-8 pr-3 py-1.5 bg-s1 border-2 border-s3 rounded-xl text-xs text-p4 placeholder:text-p5/40 focus:outline-none focus:border-s4 transition-colors w-36 sm:w-44"
+            />
+          </div>
+
           <BreezeButton
             variant="secondary"
             size="sm"
@@ -291,7 +396,7 @@ const ServerFiles = () => {
               ref={fileInputRef}
               type="file"
               multiple
-              onChange={handleUpload}
+              onChange={handleUploadInput}
               className="hidden"
             />
           </label>
@@ -301,63 +406,73 @@ const ServerFiles = () => {
       {/* Files Table */}
       <BreezeCard className="overflow-hidden">
         {loading ? (
-          <div className="flex flex-col items-center justify-center min-h-[30vh] gap-3 text-p5">
-            <Loader2 className="animate-spin text-p1 size-8" />
-            <p className="body-3 font-medium">Loading directory contents...</p>
+          <div className="p-6 flex flex-col gap-3">
+            <BreezeSkeleton className="h-8 w-full" />
+            <BreezeSkeleton className="h-8 w-full" />
+            <BreezeSkeleton className="h-8 w-full" />
+            <BreezeSkeleton className="h-8 w-full" />
           </div>
-        ) : files.length === 0 ? (
-          <div className="p-12 text-center text-p5 small-2">This directory is empty.</div>
+        ) : filteredFiles.length === 0 ? (
+          <div className="p-12 text-center text-p5 text-xs flex flex-col items-center justify-center gap-2">
+            <FileText size={28} className="text-p5/40 mb-1" />
+            <p className="font-semibold text-p4">{search ? 'No matching files found' : 'This directory is empty'}</p>
+            <p className="text-[11px] text-p5/70">
+              {search
+                ? `No files or folders in current directory match "${search}".`
+                : 'Upload files or create folders using the toolbar above or drag and drop files directly.'}
+            </p>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b-2 border-s3 bg-s1 text-p5 font-semibold uppercase tracking-wider small-compact">
-                  <th className="py-3.5 px-4">Name</th>
-                  <th className="py-3.5 px-4">Size</th>
-                  <th className="py-3.5 px-4">Last Modified</th>
-                  <th className="py-3.5 px-4 text-right">Actions</th>
+                  <th className="py-3 px-4">Name</th>
+                  <th className="py-3 px-4">Size</th>
+                  <th className="py-3 px-4">Last Modified</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-s3/60 font-mono">
-                {files.map((file) => (
+                {filteredFiles.map((file) => (
                   <tr
                     key={file.name}
-                    className="hover:bg-s5/30 transition-colors duration-500 group cursor-pointer"
+                    className="hover:bg-s5/30 transition-colors duration-300 group cursor-pointer"
                     onClick={() =>
                       file.isDirectory ? handleOpenFolder(file.name) : handleOpenFile(file)
                     }
                   >
-                    <td className="py-3 px-4 flex items-center gap-3">
+                    <td className="py-2.5 px-4 flex items-center gap-3">
                       {file.isDirectory ? (
-                        <FolderOpen size={18} className="text-amber-400 flex-shrink-0" />
+                        <FolderOpen size={17} className="text-amber-400 flex-shrink-0" />
                       ) : (
-                        <FileCode size={18} className="text-p1 flex-shrink-0" />
+                        <FileCode size={17} className="text-p1 flex-shrink-0" />
                       )}
-                      <span className="text-p4 font-semibold group-hover:text-p1 transition-colors duration-500">
+                      <span className="text-p4 font-medium group-hover:text-p1 transition-colors duration-300 truncate max-w-sm">
                         {file.name}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-p5">
+                    <td className="py-2.5 px-4 text-p5">
                       {file.isDirectory ? '-' : formatSize(file.size)}
                     </td>
-                    <td className="py-3 px-4 text-p5">
-                      {new Date(file.updatedAt).toLocaleDateString()}
+                    <td className="py-2.5 px-4 text-p5">
+                      {file.updatedAt ? new Date(file.updatedAt).toLocaleDateString() : '-'}
                     </td>
-                    <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                    <td className="py-2.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => {
                             setRenameModal(file);
                             setRenameTarget(file.name);
                           }}
-                          className="p-1.5 rounded-xl text-p5 hover:text-p4 hover:bg-s5/40 transition-colors duration-500"
+                          className="p-1.5 rounded-xl text-p5 hover:text-p4 hover:bg-s5/50 transition-colors duration-300"
                           title="Rename"
                         >
                           <Edit size={14} />
                         </button>
                         <button
                           onClick={() => handleDelete(file)}
-                          className="p-1.5 rounded-xl text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors duration-500"
+                          className="p-1.5 rounded-xl text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors duration-300"
                           title="Delete"
                         >
                           <Trash2 size={14} />
@@ -380,17 +495,18 @@ const ServerFiles = () => {
       >
         <form onSubmit={handleCreateFolder} className="flex flex-col gap-4">
           <BreezeInput
+            label="Folder Name"
             required
-            placeholder="Folder name (e.g. plugins, world)..."
+            placeholder="e.g. plugins, world, config"
             value={newFolderName}
             onChange={(e) => setNewFolderName(e.target.value)}
           />
-          <div className="flex justify-end gap-2">
-            <BreezeButton variant="ghost" size="md" onClick={() => setNewFolderModal(false)}>
+          <div className="flex justify-end gap-2 mt-2">
+            <BreezeButton variant="ghost" size="sm" type="button" onClick={() => setNewFolderModal(false)}>
               Cancel
             </BreezeButton>
-            <BreezeButton variant="primary" size="md" type="submit">
-              Create
+            <BreezeButton variant="primary" size="sm" type="submit">
+              Create Folder
             </BreezeButton>
           </div>
         </form>
@@ -404,16 +520,17 @@ const ServerFiles = () => {
       >
         <form onSubmit={handleCreateFile} className="flex flex-col gap-4">
           <BreezeInput
+            label="File Name"
             required
-            placeholder="File name (e.g. motd.txt, server.properties)..."
+            placeholder="e.g. server.properties, motd.txt"
             value={newFileName}
             onChange={(e) => setNewFileName(e.target.value)}
           />
-          <div className="flex justify-end gap-2">
-            <BreezeButton variant="ghost" size="md" onClick={() => setNewFileModal(false)}>
+          <div className="flex justify-end gap-2 mt-2">
+            <BreezeButton variant="ghost" size="sm" type="button" onClick={() => setNewFileModal(false)}>
               Cancel
             </BreezeButton>
-            <BreezeButton variant="primary" size="md" type="submit">
+            <BreezeButton variant="primary" size="sm" type="submit">
               Create & Edit
             </BreezeButton>
           </div>
@@ -424,20 +541,21 @@ const ServerFiles = () => {
       <BreezeModal
         open={!!renameModal}
         onClose={() => setRenameModal(null)}
-        title="Rename File or Folder"
+        title="Rename Item"
       >
         <form onSubmit={handleRename} className="flex flex-col gap-4">
           <BreezeInput
+            label="New Name"
             required
             value={renameTarget}
             onChange={(e) => setRenameTarget(e.target.value)}
           />
-          <div className="flex justify-end gap-2">
-            <BreezeButton variant="ghost" size="md" onClick={() => setRenameModal(null)}>
+          <div className="flex justify-end gap-2 mt-2">
+            <BreezeButton variant="ghost" size="sm" type="button" onClick={() => setRenameModal(null)}>
               Cancel
             </BreezeButton>
-            <BreezeButton variant="primary" size="md" type="submit">
-              Rename
+            <BreezeButton variant="primary" size="sm" type="submit">
+              Save Name
             </BreezeButton>
           </div>
         </form>

@@ -39,9 +39,24 @@ const PanelLayout = () => {
     return () => document.removeEventListener('click', handleClick);
   }, [userDropdown]);
 
+  // Close mobile sidebar and dropdown on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setSidebarOpen(false);
+        setUserDropdown(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const mainNav = [
     { to: '/panel', icon: LayoutDashboard, label: 'Dashboard', end: true },
-    { to: '/panel/servers', icon: Server, label: 'My Servers' },
+    { to: '/panel/servers', icon: Server, label: 'My Servers', end: true },
+  ];
+
+  const serverNav = [
     { to: '/panel/servers/create', icon: PlusCircle, label: 'Create Server' },
   ];
 
@@ -59,14 +74,14 @@ const PanelLayout = () => {
       end={end}
       className={({ isActive }) =>
         clsx(
-          'flex items-center gap-3 px-3 py-2 rounded-2xl text-sm font-medium transition-all duration-500 group',
+          'flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition-all duration-300 group',
           isActive
-            ? 'bg-s4/15 text-p1 border border-s4/30'
-            : 'text-p5 hover:text-p4 hover:bg-s5/40 border border-transparent',
+            ? 'bg-s4/20 text-p1 font-semibold border border-s4/40 shadow-sm'
+            : 'text-p5 hover:text-p4 hover:bg-s5/50 border border-transparent',
         )
       }
     >
-      <Icon size={18} className="flex-shrink-0 transition-colors duration-500 group-[.active]:text-p1" />
+      <Icon size={18} className="flex-shrink-0 transition-colors duration-300 group-[.active]:text-p1" />
       <span>{label}</span>
     </NavLink>
   );
@@ -76,7 +91,7 @@ const PanelLayout = () => {
       {/* ===== Mobile Sidebar Overlay ===== */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-200"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -84,7 +99,7 @@ const PanelLayout = () => {
       {/* ===== Sidebar ===== */}
       <aside
         className={clsx(
-          'fixed top-0 left-0 bottom-0 w-[260px] bg-s2 border-r-2 border-s3 flex flex-col z-50 transition-transform duration-500',
+          'fixed top-0 left-0 bottom-0 w-[260px] bg-s2 border-r-2 border-s3 flex flex-col z-50 transition-transform duration-300 ease-in-out',
           'lg:translate-x-0 lg:static lg:z-auto',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full',
         )}
@@ -92,8 +107,8 @@ const PanelLayout = () => {
         {/* Logo */}
         <div className="p-5 pb-0">
           <Link
-            to="/"
-            className="flex items-center gap-2.5 group transition-transform duration-500 hover:scale-[1.02]"
+            to="/panel"
+            className="flex items-center gap-2.5 group transition-transform duration-300 hover:scale-[1.02]"
           >
             <img
               src="/images/breeze-logo.png"
@@ -109,11 +124,23 @@ const PanelLayout = () => {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-4 py-6 flex flex-col gap-6">
+        <nav className="flex-1 overflow-y-auto px-3 py-6 flex flex-col gap-6">
           {/* Main */}
           <div className="flex flex-col gap-1">
-            <p className="caption pl-3 mb-2">Navigation</p>
+            <p className="caption pl-3 mb-1 text-[11px] font-bold text-p3 uppercase tracking-wider">
+              Main
+            </p>
             {mainNav.map((item) => (
+              <NavItem key={item.to} {...item} />
+            ))}
+          </div>
+
+          {/* Server */}
+          <div className="flex flex-col gap-1">
+            <p className="caption pl-3 mb-1 text-[11px] font-bold text-p3 uppercase tracking-wider">
+              Server
+            </p>
+            {serverNav.map((item) => (
               <NavItem key={item.to} {...item} />
             ))}
           </div>
@@ -121,7 +148,9 @@ const PanelLayout = () => {
           {/* Admin */}
           {isAdmin && (
             <div className="flex flex-col gap-1">
-              <p className="caption pl-3 mb-2">Administration</p>
+              <p className="caption pl-3 mb-1 text-[11px] font-bold text-p3 uppercase tracking-wider">
+                Administration
+              </p>
               {adminNav.map((item) => (
                 <NavItem key={item.to} {...item} />
               ))}
@@ -130,15 +159,15 @@ const PanelLayout = () => {
         </nav>
 
         {/* User Footer */}
-        <div className="px-4 py-4 border-t-2 border-s3">
+        <div className="px-3 py-4 border-t-2 border-s3 flex flex-col gap-1">
           <NavLink
             to="/panel/account"
             className={({ isActive }) =>
               clsx(
-                'flex items-center gap-3 px-3 py-2 rounded-2xl text-sm font-medium transition-all duration-500',
+                'flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition-all duration-300',
                 isActive
-                  ? 'bg-s4/15 text-p1 border border-s4/30'
-                  : 'text-p5 hover:text-p4 hover:bg-s5/40 border border-transparent',
+                  ? 'bg-s4/20 text-p1 font-semibold border border-s4/40 shadow-sm'
+                  : 'text-p5 hover:text-p4 hover:bg-s5/50 border border-transparent',
               )
             }
           >
@@ -148,13 +177,14 @@ const PanelLayout = () => {
 
           <button
             onClick={logout}
-            className="flex items-center gap-3 px-3 py-2 rounded-2xl text-sm font-medium text-p5 hover:text-red-400 hover:bg-red-500/10 border border-transparent transition-all duration-500 w-full mt-1"
+            className="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-medium text-p5 hover:text-red-400 hover:bg-red-500/10 border border-transparent transition-all duration-300 w-full text-left"
           >
             <LogOut size={18} className="flex-shrink-0" />
             <span>Logout</span>
           </button>
         </div>
       </aside>
+
 
       {/* ===== Main Content ===== */}
       <div className="flex-1 flex flex-col min-w-0">
