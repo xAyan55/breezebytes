@@ -6,6 +6,7 @@ import BreezeModal from '../../../components/ui/BreezeModal.jsx';
 import BreezeInput from '../../../components/ui/BreezeInput.jsx';
 import BreezePageHeader from '../../../components/ui/BreezePageHeader.jsx';
 import BreezeBadge from '../../../components/ui/BreezeBadge.jsx';
+import BreezeIcon from '../../../components/ui/BreezeIcon.jsx';
 import { BreezeSkeleton } from '../../../components/ui/BreezeSkeleton.jsx';
 import { Network, PlusCircle, Trash2, Check, AlertCircle } from 'lucide-react';
 import clsx from 'clsx';
@@ -98,7 +99,7 @@ const AdminAllocations = () => {
               : 'bg-red-500/10 border-red-500/30 text-red-400',
           )}
         >
-          {statusMessage.type === 'success' ? <Check size={16} /> : <AlertCircle size={16} />}
+          <BreezeIcon icon={statusMessage.type === 'success' ? Check : AlertCircle} size={16} />
           <span>{statusMessage.message}</span>
         </div>
       )}
@@ -144,7 +145,7 @@ const AdminAllocations = () => {
                           className="p-1.5 rounded-xl text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                           title="Delete Allocation"
                         >
-                          <Trash2 size={15} />
+                          <BreezeIcon icon={Trash2} size={15} />
                         </button>
                       )}
                     </td>

@@ -4,6 +4,7 @@ import { useSocket } from '../context/SocketContext.jsx';
 import api from '../services/api.js';
 import BreezeBadge from '../../components/ui/BreezeBadge.jsx';
 import BreezeButton from '../../components/ui/BreezeButton.jsx';
+import BreezeIcon from '../../components/ui/BreezeIcon.jsx';
 import SoftwareIcon from '../../components/ui/SoftwareIcons.jsx';
 import {
   Terminal,
@@ -18,7 +19,6 @@ import {
   Square,
   RotateCcw,
   XOctagon,
-  Loader2,
   Copy,
   Check,
   ArrowLeft,
@@ -143,7 +143,7 @@ const ServerLayout = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-s1 flex flex-col items-center justify-center gap-3 text-p5">
-        <Loader2 className="animate-spin text-p1 size-8" />
+        <img src="/images/icons/Loader2.gif" alt="Loading" className="size-8 object-contain" />
         <p className="body-3 font-medium">Loading server workspace...</p>
       </div>
     );
@@ -225,7 +225,7 @@ const ServerLayout = () => {
               className="hidden lg:flex p-2 rounded-xl text-p5 hover:text-p4 hover:bg-s5/60 transition-colors cursor-pointer"
               title={collapsed ? 'Expand Sidebar (Ctrl+B)' : 'Collapse Sidebar (Ctrl+B)'}
             >
-              <PanelLeft size={18} />
+              <BreezeIcon icon={PanelLeft} size={18} />
             </button>
 
             {/* Close Button (Mobile) */}
@@ -233,7 +233,7 @@ const ServerLayout = () => {
               onClick={() => setMobileOpen(false)}
               className="lg:hidden p-2 rounded-xl text-p5 hover:text-p4 hover:bg-s5/60 transition-colors"
             >
-              <X size={20} />
+              <BreezeIcon icon={X} size={20} />
             </button>
           </div>
 
@@ -241,7 +241,7 @@ const ServerLayout = () => {
           {(!collapsed || mobileOpen) ? (
             <div className="p-3 rounded-2xl bg-s1/70 border border-s3/80 flex items-center gap-3">
               <div className="size-9 rounded-xl border border-s3 bg-s2 flex items-center justify-center p-1.5 flex-shrink-0 shadow-inner">
-                <SoftwareIcon software={server.software} size={18} className="text-p1" />
+                <SoftwareIcon software={server.software} size={20} className="text-p1" />
               </div>
               <div className="min-w-0 flex-1">
                 <h2 className="text-xs font-bold text-p4 truncate" title={server.name}>
@@ -266,7 +266,7 @@ const ServerLayout = () => {
               className="size-10 mx-auto rounded-xl border border-s3 bg-s1/80 flex items-center justify-center p-1.5 relative group cursor-default"
               title={`${server.name} (${status}) - ${server.software || 'Paper'} ${server.minecraft_version || ''}`}
             >
-              <SoftwareIcon software={server.software} size={18} className="text-p1" />
+              <SoftwareIcon software={server.software} size={20} className="text-p1" />
               <span
                 className={clsx(
                   'absolute -top-0.5 -right-0.5 size-2.5 rounded-full border-2 border-s2',
@@ -286,7 +286,6 @@ const ServerLayout = () => {
           )}
 
           {navItems.map((item) => {
-            const Icon = item.icon;
             const isActive = item.matchExact
               ? isConsoleActive
               : location.pathname.startsWith(item.to);
@@ -306,11 +305,12 @@ const ServerLayout = () => {
                     : 'text-p5 hover:text-p4 hover:bg-s5/50 border border-transparent',
                 )}
               >
-                <Icon
+                <BreezeIcon
+                  icon={item.icon}
                   size={18}
                   className={clsx(
-                    'flex-shrink-0 transition-colors duration-300',
-                    isActive ? 'text-p1' : 'text-p5/70 group-hover:text-p4',
+                    'flex-shrink-0 transition-transform duration-300 group-hover:scale-110',
+                    isActive ? 'scale-105' : 'opacity-80 group-hover:opacity-100',
                   )}
                 />
                 {(!collapsed || mobileOpen) && <span className="truncate">{item.label}</span>}
@@ -325,13 +325,13 @@ const ServerLayout = () => {
             to="/panel/servers"
             title={collapsed && !mobileOpen ? 'Back to Servers' : undefined}
             className={clsx(
-              'flex items-center rounded-2xl text-sm font-semibold text-p5 hover:text-p4 hover:bg-s5/50 border border-transparent transition-all duration-300',
+              'flex items-center rounded-2xl text-sm font-semibold text-p5 hover:text-p4 hover:bg-s5/50 border border-transparent transition-all duration-300 group',
               collapsed && !mobileOpen
                 ? 'justify-center size-11 mx-auto'
                 : 'gap-3 px-3.5 py-2.5',
             )}
           >
-            <ArrowLeft size={18} className="text-p1 flex-shrink-0" />
+            <BreezeIcon icon={ArrowLeft} size={18} className="flex-shrink-0 transition-transform duration-300 group-hover:-translate-x-1" />
             {(!collapsed || mobileOpen) && <span>Back to Servers</span>}
           </Link>
         </div>
@@ -346,7 +346,7 @@ const ServerLayout = () => {
             className="p-2 rounded-xl text-p5 hover:text-p4 hover:bg-s5/50 transition-colors"
             aria-label="Toggle Server Navigation"
           >
-            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+            <BreezeIcon icon={mobileOpen ? X : Menu} size={20} />
           </button>
 
           <div className="flex items-center gap-2 truncate max-w-[200px]">
@@ -361,7 +361,7 @@ const ServerLayout = () => {
             className="p-1.5 rounded-xl text-p5 hover:text-p4 hover:bg-s5/50 transition-colors"
             title="Back to Servers"
           >
-            <ArrowLeft size={18} />
+            <BreezeIcon icon={ArrowLeft} size={18} />
           </Link>
         </header>
 
@@ -371,7 +371,7 @@ const ServerLayout = () => {
             {/* Error Notification Banner if power action fails */}
             {errorMessage && (
               <div className="mb-4 p-3.5 rounded-2xl bg-red-500/10 border-2 border-red-500/30 flex items-center gap-2.5 text-xs text-red-400">
-                <AlertCircle size={16} className="flex-shrink-0" />
+                <BreezeIcon icon={AlertCircle} size={16} className="flex-shrink-0" />
                 <span>{errorMessage}</span>
               </div>
             )}
@@ -388,7 +388,7 @@ const ServerLayout = () => {
 
               <div className="relative z-10 flex items-center gap-3.5 min-w-0">
                 <div className="size-11 rounded-xl border border-s3 bg-s1/90 backdrop-blur-md flex items-center justify-center p-1.5 flex-shrink-0 shadow-md">
-                  <SoftwareIcon software={server.software} size={22} className="text-p1" />
+                  <SoftwareIcon software={server.software} size={24} className="text-p1" />
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-3 flex-wrap">
@@ -409,9 +409,9 @@ const ServerLayout = () => {
                         title="Copy Server Address"
                       >
                         {copied ? (
-                          <Check size={13} className="text-emerald-400" />
+                          <BreezeIcon icon={Check} size={13} />
                         ) : (
-                          <Copy size={13} />
+                          <BreezeIcon icon={Copy} size={13} />
                         )}
                       </button>
                     )}
@@ -424,7 +424,7 @@ const ServerLayout = () => {
                 <BreezeButton
                   variant="primary"
                   size="sm"
-                  icon={actionLoading === 'start' ? Loader2 : Play}
+                  icon={Play}
                   loading={actionLoading === 'start'}
                   onClick={() => handlePower('start')}
                   disabled={isOnline || isStarting || !!actionLoading}
@@ -434,7 +434,7 @@ const ServerLayout = () => {
                 <BreezeButton
                   variant="warning"
                   size="sm"
-                  icon={actionLoading === 'restart' ? Loader2 : RotateCcw}
+                  icon={RotateCcw}
                   loading={actionLoading === 'restart'}
                   onClick={() => handlePower('restart')}
                   disabled={!isOnline || !!actionLoading}
@@ -444,7 +444,7 @@ const ServerLayout = () => {
                 <BreezeButton
                   variant="destructive"
                   size="sm"
-                  icon={actionLoading === 'stop' ? Loader2 : Square}
+                  icon={Square}
                   loading={actionLoading === 'stop'}
                   onClick={() => handlePower('stop')}
                   disabled={(!isOnline && !isStarting) || !!actionLoading}
@@ -454,7 +454,7 @@ const ServerLayout = () => {
                 <BreezeButton
                   variant="destructive"
                   size="sm"
-                  icon={actionLoading === 'kill' ? Loader2 : XOctagon}
+                  icon={XOctagon}
                   loading={actionLoading === 'kill'}
                   onClick={() => handlePower('kill')}
                   disabled={(!isOnline && !isStarting && !isStopping) || !!actionLoading}

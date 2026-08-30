@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import BreezeIcon from '../../components/ui/BreezeIcon.jsx';
 import {
   LayoutDashboard,
   Server,
@@ -51,6 +52,11 @@ const PanelLayout = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
+
   const mainNav = [
     { to: '/panel', icon: LayoutDashboard, label: 'Dashboard', end: true },
     { to: '/panel/servers', icon: Server, label: 'My Servers', end: true },
@@ -81,7 +87,7 @@ const PanelLayout = () => {
         )
       }
     >
-      <Icon size={18} className="flex-shrink-0 transition-colors duration-300 group-[.active]:text-p1" />
+      <BreezeIcon icon={Icon} size={18} className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110" />
       <span>{label}</span>
     </NavLink>
   );
@@ -145,7 +151,7 @@ const PanelLayout = () => {
             ))}
           </div>
 
-          {/* Admin */}
+          {/* Administration (Admin only) */}
           {isAdmin && (
             <div className="flex flex-col gap-1">
               <p className="caption pl-3 mb-1 text-[11px] font-bold text-p3 uppercase tracking-wider">
@@ -158,120 +164,101 @@ const PanelLayout = () => {
           )}
         </nav>
 
-        {/* User Footer */}
-        <div className="px-3 py-4 border-t-2 border-s3 flex flex-col gap-1">
+        {/* Sidebar Footer */}
+        <div className="p-3 border-t-2 border-s3 flex flex-col gap-1">
           <NavLink
             to="/panel/account"
             className={({ isActive }) =>
               clsx(
-                'flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition-all duration-300',
+                'flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition-all duration-300 group',
                 isActive
                   ? 'bg-s4/20 text-p1 font-semibold border border-s4/40 shadow-sm'
                   : 'text-p5 hover:text-p4 hover:bg-s5/50 border border-transparent',
               )
             }
           >
-            <Settings size={18} className="flex-shrink-0" />
-            <span>Account</span>
+            <BreezeIcon icon={User} size={18} className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110" />
+            <span>Account Settings</span>
           </NavLink>
 
           <button
-            onClick={logout}
-            className="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-medium text-p5 hover:text-red-400 hover:bg-red-500/10 border border-transparent transition-all duration-300 w-full text-left"
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-medium text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors w-full text-left"
           >
-            <LogOut size={18} className="flex-shrink-0" />
-            <span>Logout</span>
+            <BreezeIcon icon={LogOut} size={18} className="flex-shrink-0" />
+            <span>Sign Out</span>
           </button>
         </div>
       </aside>
 
-
-      {/* ===== Main Content ===== */}
+      {/* ===== Main Area ===== */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Header Bar */}
-        <header className="sticky top-0 z-30 bg-s2/90 backdrop-blur-md border-b-2 border-s3">
-          <div className="flex items-center justify-between px-4 sm:px-6 h-16">
-            {/* Mobile menu toggle */}
+        {/* Top Header */}
+        <header className="h-16 bg-s2/80 backdrop-blur-md border-b-2 border-s3 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30">
+          {/* Mobile hamburger */}
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="lg:hidden p-2 rounded-xl text-p5 hover:text-p4 hover:bg-s5/50 transition-colors"
+            aria-label="Toggle Navigation"
+          >
+            <BreezeIcon icon={sidebarOpen ? X : Menu} size={22} />
+          </button>
+
+          <div className="lg:hidden flex items-center gap-2">
+            <img src="/images/breeze-logo.png" width={28} height={28} alt="BreezeBytes" />
+            <span className="font-poppins font-bold text-sm text-p4">
+              Breeze<span className="text-p1">Bytes</span>
+            </span>
+          </div>
+
+          <div className="hidden lg:block">
+            {/* Breadcrumb or empty */}
+          </div>
+
+          {/* User Menu */}
+          <div className="relative">
             <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="lg:hidden p-2 rounded-2xl text-p5 hover:text-p4 hover:bg-s5/40 transition-all duration-500 border border-transparent"
+              onClick={(e) => {
+                e.stopPropagation();
+                setUserDropdown(!userDropdown);
+              }}
+              className="flex items-center gap-3 p-1.5 pr-3 rounded-2xl hover:bg-s5/50 border border-transparent hover:border-s3 transition-all duration-300"
             >
-              {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+              <div className="size-8 rounded-xl bg-s1 border border-s3 flex items-center justify-center text-p1 font-bold text-xs uppercase overflow-hidden">
+                {user?.username ? user.username.charAt(0) : <BreezeIcon icon={Server} size={14} />}
+              </div>
+              <div className="hidden sm:flex flex-col text-left">
+                <span className="text-xs font-semibold text-p4 leading-tight">{user?.username}</span>
+                <span className="text-[10px] text-p5 capitalize leading-tight">{user?.role}</span>
+              </div>
+              <BreezeIcon icon={ChevronDown} size={14} className="text-p5" />
             </button>
 
-            {/* Logo in header for mobile */}
-            <Link
-              to="/panel"
-              className="flex items-center gap-2 lg:hidden"
-            >
-              <img
-                src="/images/breeze-logo.png"
-                width={28}
-                height={28}
-                alt="BreezeBytes"
-                className="object-contain"
-              />
-              <span className="font-poppins font-bold text-sm tracking-wider text-p4">
-                Breeze<span className="text-p1">Bytes</span>
-              </span>
-            </Link>
-
-            {/* Spacer for desktop */}
-            <div className="hidden lg:block" />
-
-            {/* User menu */}
-            <div className="relative">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setUserDropdown(!userDropdown);
-                }}
-                className="flex items-center gap-2.5 px-3 py-1.5 rounded-2xl border-2 border-s3 bg-s2 hover:border-s4 transition-all duration-500 text-sm"
-              >
-                <div className="size-7 rounded-full bg-s4/20 border-2 border-s3 flex items-center justify-center text-p1">
-                  <User size={14} />
-                </div>
-                <span className="text-p4 font-semibold hidden sm:inline max-w-[120px] truncate">
-                  {user?.username}
-                </span>
-                <ChevronDown
-                  size={14}
-                  className={clsx(
-                    'text-p5 transition-transform duration-500',
-                    userDropdown && 'rotate-180',
-                  )}
-                />
-              </button>
-
-              {/* Dropdown */}
-              {userDropdown && (
-                <div className="absolute right-0 mt-2 w-52 bg-s2 border-2 border-s3 rounded-2xl shadow-500 overflow-hidden py-2 z-50">
-                  <div className="px-4 py-2 border-b border-s3">
-                    <p className="text-xs font-bold text-p4 truncate">{user?.username}</p>
-                    <p className="text-[11px] text-p5 truncate">{user?.email}</p>
-                  </div>
-                  <button
-                    onClick={() => navigate('/panel/account')}
-                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-p5 hover:bg-s5/40 hover:text-p4 transition-colors"
-                  >
-                    <Settings size={14} />
-                    <span>Account Settings</span>
-                  </button>
-                  <button
-                    onClick={logout}
-                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
-                  >
-                    <LogOut size={14} />
-                    <span>Logout</span>
-                  </button>
-                </div>
-              )}
-            </div>
+            {/* Dropdown */}
+            {userDropdown && (
+              <div className="absolute right-0 mt-2 w-48 bg-s2 border-2 border-s3 rounded-2xl p-1.5 shadow-500 z-50 animate-in fade-in zoom-in-95 duration-200">
+                <Link
+                  to="/panel/account"
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-p5 hover:text-p4 hover:bg-s5/50 transition-colors"
+                >
+                  <BreezeIcon icon={Settings} size={15} />
+                  <span>Account Settings</span>
+                </Link>
+                <div className="my-1 border-t border-s3" />
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-red-400 hover:bg-red-500/10 transition-colors w-full text-left"
+                >
+                  <BreezeIcon icon={LogOut} size={15} />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            )}
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
           <Outlet />
         </main>
       </div>

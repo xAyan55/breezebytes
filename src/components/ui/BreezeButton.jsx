@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { Loader2 } from 'lucide-react';
+import BreezeIcon from './BreezeIcon.jsx';
 
 const variants = {
   primary:
@@ -38,24 +38,7 @@ const BreezeButton = ({
   ...props
 }) => {
   const isDisabled = disabled || loading;
-
-  const renderIcon = (iconItem, defaultSize = 14) => {
-    if (!iconItem) return null;
-    if (typeof iconItem === 'string') {
-      return (
-        <img
-          src={iconItem}
-          alt=""
-          className={clsx(
-            'object-contain flex-shrink-0',
-            size === 'lg' ? 'size-5' : size === 'xs' ? 'size-3.5' : 'size-4',
-          )}
-        />
-      );
-    }
-    const IconComp = iconItem;
-    return <IconComp size={defaultSize} className="flex-shrink-0" />;
-  };
+  const iconSize = size === 'lg' ? 18 : size === 'xs' ? 13 : 15;
 
   return (
     <Component
@@ -70,12 +53,23 @@ const BreezeButton = ({
       {...props}
     >
       {loading ? (
-        <Loader2 size={14} className="animate-spin" />
-      ) : (
-        renderIcon(Icon, 14)
-      )}
+        <img
+          src="/images/icons/Loader2.gif"
+          alt="Loading"
+          width={iconSize}
+          height={iconSize}
+          className="object-contain flex-shrink-0"
+          style={{ width: `${iconSize}px`, height: `${iconSize}px` }}
+        />
+      ) : Icon ? (
+        <BreezeIcon icon={Icon} size={iconSize} />
+      ) : null}
+
       {children && <span>{children}</span>}
-      {!loading && renderIcon(IconRight, 14)}
+
+      {!loading && IconRight && (
+        <BreezeIcon icon={IconRight} size={iconSize} />
+      )}
     </Component>
   );
 };

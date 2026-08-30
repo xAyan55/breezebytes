@@ -6,6 +6,7 @@ import BreezeModal from '../../../components/ui/BreezeModal.jsx';
 import BreezeInput from '../../../components/ui/BreezeInput.jsx';
 import BreezePageHeader from '../../../components/ui/BreezePageHeader.jsx';
 import BreezeBadge from '../../../components/ui/BreezeBadge.jsx';
+import BreezeIcon from '../../../components/ui/BreezeIcon.jsx';
 import { BreezeCardSkeleton } from '../../../components/ui/BreezeSkeleton.jsx';
 import { HardDrive, PlusCircle, Check, AlertCircle } from 'lucide-react';
 import clsx from 'clsx';
@@ -88,7 +89,7 @@ const AdminNodes = () => {
               : 'bg-red-500/10 border-red-500/30 text-red-400',
           )}
         >
-          {statusMessage.type === 'success' ? <Check size={16} /> : <AlertCircle size={16} />}
+          <BreezeIcon icon={statusMessage.type === 'success' ? Check : AlertCircle} size={16} />
           <span>{statusMessage.message}</span>
         </div>
       )}
@@ -106,7 +107,7 @@ const AdminNodes = () => {
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <h3 className="base-bold text-p4 flex items-center gap-2.5">
                     <div className="size-8 rounded-xl bg-s1 border border-s3 flex items-center justify-center text-p1">
-                      <HardDrive size={16} />
+                      <BreezeIcon icon={HardDrive} size={16} />
                     </div>
                     <span>{node.name}</span>
                   </h3>

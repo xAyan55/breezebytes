@@ -7,8 +7,8 @@ import BreezeModal from '../../../components/ui/BreezeModal.jsx';
 import BreezeInput from '../../../components/ui/BreezeInput.jsx';
 import BreezePageHeader from '../../../components/ui/BreezePageHeader.jsx';
 import BreezeBadge from '../../../components/ui/BreezeBadge.jsx';
+import BreezeIcon from '../../../components/ui/BreezeIcon.jsx';
 import { User, PlusCircle, Trash2, Copy, Check, AlertCircle, Key, Lock, Shield } from 'lucide-react';
-import clsx from 'clsx';
 
 const AccountSettings = () => {
   const { user } = useAuth();
@@ -48,14 +48,24 @@ const AccountSettings = () => {
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
+    if (!currentPassword || !newPassword) return;
+
     try {
       setPasswordLoading(true);
-      await api.post('/auth/change-password', { currentPassword, newPassword });
-      showNotification('success', 'Password updated successfully.');
-      setCurrentPassword('');
-      setNewPassword('');
+      const res = await api.put('/account/password', {
+        currentPassword,
+        newPassword,
+      });
+
+      if (res.success) {
+        showNotification('success', 'Password updated successfully.');
+        setCurrentPassword('');
+        setNewPassword('');
+      } else {
+        throw new Error(res.error?.message || 'Password update failed');
+      }
     } catch (err) {
-      showNotification('error', `Password update failed: ${err.message}`);
+      showNotification('error', err.message);
     } finally {
       setPasswordLoading(false);
     }
@@ -64,38 +74,40 @@ const AccountSettings = () => {
   const handleCreateKey = async (e) => {
     e.preventDefault();
     if (!keyName.trim()) return;
+
     try {
-      const res = await api.post('/account/api-keys', { name: keyName.trim() });
+      const res = await api.post('/account/api-keys', {
+        name: keyName.trim(),
+      });
+
       if (res.success && res.data) {
         setCreatedKey(res.data);
         setKeyName('');
-        showNotification('success', 'API key generated.');
         fetchKeys();
+      } else {
+        throw new Error(res.error?.message || 'Failed to generate API key');
       }
     } catch (err) {
-      showNotification('error', `API key creation failed: ${err.message}`);
+      showNotification('error', err.message);
     }
   };
 
   const handleDeleteKey = async (keyId) => {
-    if (
-      !confirm(
-        'Revoke this API Key? Any integrations using this token will stop functioning immediately.',
-      )
-    ) {
-      return;
-    }
     try {
-      await api.delete(`/account/api-keys/${keyId}`);
-      showNotification('success', 'API key revoked.');
-      fetchKeys();
+      const res = await api.delete(`/account/api-keys/${keyId}`);
+      if (res.success) {
+        showNotification('success', 'API key revoked.');
+        fetchKeys();
+      } else {
+        throw new Error(res.error?.message || 'Failed to revoke key');
+      }
     } catch (err) {
-      showNotification('error', `Delete failed: ${err.message}`);
+      showNotification('error', err.message);
     }
   };
 
-  const handleCopyKey = () => {
-    if (createdKey) {
+  const copyKey = () => {
+    if (createdKey?.token) {
       navigator.clipboard.writeText(createdKey.token);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -103,105 +115,108 @@ const AccountSettings = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6 max-w-5xl mx-auto w-full">
+    <div className="flex flex-col gap-6 max-w-4xl mx-auto w-full">
+      {/* Header */}
       <BreezePageHeader
-        caption="Account"
-        title="Account & Security"
-        description="Manage credentials, authentication settings, and developer API keys."
+        caption="Security & Identity"
+        title="Account Settings"
+        description="Manage your credentials, authentication preferences, and developer API keys."
         icon={User}
       />
 
       {/* Notification Banner */}
       {statusMessage && (
         <div
-          className={clsx(
-            'p-3.5 rounded-2xl border-2 text-xs flex items-center gap-2.5',
-            statusMessage.type === 'success'
-              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-              : 'bg-red-500/10 border-red-500/30 text-red-400',
-          )}
+          className={`p-4 rounded-2xl border-2 flex items-center justify-between text-xs transition-all duration-300 ${
+            statusMessage.type === 'error'
+              ? 'bg-red-500/10 border-red-500/30 text-red-400'
+              : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+          }`}
         >
-          {statusMessage.type === 'success' ? <Check size={16} /> : <AlertCircle size={16} />}
-          <span>{statusMessage.message}</span>
+          <div className="flex items-center gap-2">
+            <BreezeIcon icon={statusMessage.type === 'error' ? AlertCircle : Check} size={16} />
+            <span>{statusMessage.message}</span>
+          </div>
+          <button onClick={() => setStatusMessage(null)} className="font-bold ml-3 text-p4 hover:underline">
+            ✕
+          </button>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* User Info */}
-        <BreezeCard className="p-6 flex flex-col gap-4">
-          <h2 className="base-bold text-p4 flex items-center gap-2.5">
-            <Shield size={18} className="text-p1" />
-            <span>Profile Details</span>
-          </h2>
-          <div className="flex flex-col gap-3">
-            <div>
-              <p className="text-[11px] text-p5 uppercase font-semibold">Username</p>
-              <p className="text-sm font-bold text-p4 mt-0.5">{user?.username}</p>
-            </div>
-            <div>
-              <p className="text-[11px] text-p5 uppercase font-semibold">Email Address</p>
-              <p className="text-sm font-bold text-p4 mt-0.5">{user?.email}</p>
-            </div>
-            <div>
-              <p className="text-[11px] text-p5 uppercase font-semibold">Account Role</p>
-              <BreezeBadge status="default" dot={false} className="mt-1">
-                {user?.role}
+      {/* Profile Overview */}
+      <BreezeCard className="p-6">
+        <div className="flex items-center gap-4">
+          <div className="size-16 rounded-2xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 font-bold text-2xl uppercase">
+            {user?.username ? user.username.charAt(0) : <BreezeIcon icon={User} size={28} />}
+          </div>
+          <div>
+            <h2 className="h6 text-p4 flex items-center gap-2">
+              <span>{user?.username}</span>
+              <BreezeBadge status={user?.role === 'admin' ? 'running' : 'offline'}>
+                {user?.role || 'user'}
               </BreezeBadge>
+            </h2>
+            <p className="body-3 text-p5 mt-0.5">{user?.email}</p>
+            <div className="flex items-center gap-3 mt-2 text-xs text-p5">
+              <span className="flex items-center gap-1">
+                <BreezeIcon icon={Shield} size={14} className="text-p1" />
+                <span>Standard Authentication</span>
+              </span>
             </div>
           </div>
-        </BreezeCard>
+        </div>
+      </BreezeCard>
 
-        {/* Change Password */}
-        <form onSubmit={handlePasswordChange}>
-          <BreezeCard className="p-6 flex flex-col gap-4 h-full">
-            <h2 className="base-bold text-p4 flex items-center gap-2.5">
-              <Lock size={18} className="text-p1" />
-              <span>Update Password</span>
-            </h2>
-            <BreezeInput
-              label="Current Password"
-              type="password"
-              required
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-            />
-            <BreezeInput
-              label="New Password"
-              type="password"
-              required
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              minLength={6}
-            />
+      {/* Password Change */}
+      <BreezeCard className="p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <BreezeIcon icon={Lock} size={20} className="text-p1" />
+          <h2 className="base-bold text-p4">Security & Password</h2>
+        </div>
+        <form onSubmit={handlePasswordChange} className="flex flex-col gap-4">
+          <BreezeInput
+            type="password"
+            label="Current Password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            placeholder="••••••••"
+            required
+          />
+          <BreezeInput
+            type="password"
+            label="New Password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            placeholder="••••••••"
+            required
+          />
+          <div className="flex justify-end pt-2">
             <BreezeButton
+              type="submit"
               variant="primary"
               size="md"
-              type="submit"
-              className="mt-2 w-full"
               loading={passwordLoading}
-              icon="/images/magictouch.svg"
+              disabled={!currentPassword || !newPassword}
             >
-              {passwordLoading ? 'Updating Password...' : 'Save New Password'}
+              Update Password
             </BreezeButton>
-          </BreezeCard>
+          </div>
         </form>
-      </div>
+      </BreezeCard>
 
       {/* API Keys */}
-      <BreezeCard className="p-6 flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="base-bold text-p4 flex items-center gap-2.5">
-              <Key size={18} className="text-p1" />
-              <span>Developer API Keys</span>
-            </h2>
-            <p className="text-xs text-p5 mt-1">
-              Manage API tokens for programmatic REST control of your servers.
-            </p>
+      <BreezeCard className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <BreezeIcon icon={Key} size={20} className="text-p1" />
+            <div>
+              <h2 className="base-bold text-p4">Developer API Keys</h2>
+              <p className="body-3 text-p5">Generate bearer tokens to programmatically manage your servers.</p>
+            </div>
           </div>
           <BreezeButton
-            variant="primary"
-            size="md"
+            variant="secondary"
+            size="sm"
             icon={PlusCircle}
             onClick={() => {
               setCreatedKey(null);
@@ -213,80 +228,78 @@ const AccountSettings = () => {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-6">
-            <p className="text-xs text-p5">Loading keys...</p>
-          </div>
+          <div className="py-8 text-center text-p5 text-xs">Loading API credentials...</div>
         ) : apiKeys.length === 0 ? (
-          <p className="text-xs text-p5 text-center py-4">No API keys generated yet.</p>
+          <div className="py-8 text-center text-p5 text-xs">No active API keys found.</div>
         ) : (
           <div className="divide-y divide-s3">
             {apiKeys.map((k) => (
-              <div key={k.id} className="py-3 flex items-center justify-between font-mono text-xs">
+              <div key={k.id} className="py-3 flex items-center justify-between">
                 <div>
-                  <p className="base-bold text-p4 font-sans">{k.name}</p>
-                  <p className="text-xs text-p5 mt-0.5">Prefix: {k.key_prefix}...</p>
+                  <p className="text-sm font-semibold text-p4">{k.name}</p>
+                  <p className="text-xs text-p5 font-mono">
+                    Key: ****{k.id.slice(-6)} • Created: {new Date(k.created_at).toLocaleDateString()}
+                  </p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-p5">
-                    {k.last_used_at
-                      ? `Last used: ${new Date(k.last_used_at).toLocaleDateString()}`
-                      : 'Never used'}
-                  </span>
-                  <button
-                    onClick={() => handleDeleteKey(k.id)}
-                    className="p-1.5 rounded-xl text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                </div>
+                <button
+                  onClick={() => handleDeleteKey(k.id)}
+                  className="p-2 text-p5 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors"
+                  title="Revoke Key"
+                >
+                  <BreezeIcon icon={Trash2} size={16} />
+                </button>
               </div>
             ))}
           </div>
         )}
       </BreezeCard>
 
-      <BreezeModal open={keyModal} onClose={() => setKeyModal(false)} title="Generate API Key">
+      {/* Create Key Modal */}
+      <BreezeModal
+        isOpen={keyModal}
+        onClose={() => setKeyModal(false)}
+        title={createdKey ? 'API Key Created' : 'Generate API Key'}
+      >
         {createdKey ? (
           <div className="flex flex-col gap-4">
-            <div className="p-3.5 rounded-2xl bg-emerald-500/10 border-2 border-emerald-500/30 text-emerald-400 text-xs">
-              Key created! Please copy and store it securely now; it will not be shown again.
+            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-xs">
+              ⚠️ Save this token now! You will not be able to view it again.
             </div>
-            <div className="p-3 bg-s1 border-2 border-s3 rounded-2xl flex items-center justify-between font-mono text-xs text-p1 break-all select-all">
-              <span>{createdKey.token}</span>
+            <div className="p-3 bg-s1 rounded-xl border border-s3 flex items-center justify-between gap-2 font-mono text-xs text-p4 select-all">
+              <span className="truncate">{createdKey.token}</span>
               <button
-                onClick={handleCopyKey}
-                className="p-1.5 rounded-xl hover:bg-s5/40 text-p5 hover:text-p4 flex-shrink-0 ml-2"
+                onClick={copyKey}
+                className="p-1.5 rounded-lg bg-s2 border border-s3 hover:text-p1 transition-colors flex-shrink-0"
               >
-                {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                {copied ? <BreezeIcon icon={Check} size={14} className="text-emerald-400" /> : <BreezeIcon icon={Copy} size={14} />}
               </button>
             </div>
-            <BreezeButton
-              variant="primary"
-              size="md"
-              className="w-full"
-              onClick={() => {
-                setKeyModal(false);
-                setCreatedKey(null);
-              }}
-            >
-              Close & Done
-            </BreezeButton>
+            <div className="flex justify-end pt-2">
+              <BreezeButton variant="primary" size="sm" onClick={() => setKeyModal(false)}>
+                Done
+              </BreezeButton>
+            </div>
           </div>
         ) : (
           <form onSubmit={handleCreateKey} className="flex flex-col gap-4">
             <BreezeInput
-              label="Key Description / Name"
-              required
-              placeholder="e.g. Discord Bot, Monitoring Script"
+              label="Key Description"
               value={keyName}
               onChange={(e) => setKeyName(e.target.value)}
+              placeholder="e.g. Discord Bot, Automated Backups"
+              required
             />
-            <div className="flex justify-end gap-2 mt-2">
-              <BreezeButton variant="ghost" size="sm" type="button" onClick={() => setKeyModal(false)}>
+            <div className="flex justify-end gap-2 pt-2">
+              <BreezeButton
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => setKeyModal(false)}
+              >
                 Cancel
               </BreezeButton>
-              <BreezeButton variant="primary" size="sm" type="submit">
-                Generate Token
+              <BreezeButton type="submit" variant="primary" size="sm" disabled={!keyName.trim()}>
+                Create
               </BreezeButton>
             </div>
           </form>

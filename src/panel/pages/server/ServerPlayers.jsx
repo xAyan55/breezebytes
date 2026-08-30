@@ -1,365 +1,266 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../../services/api.js';
-import BreezeCard from '../../../components/ui/BreezeCard.jsx';
 import BreezeButton from '../../../components/ui/BreezeButton.jsx';
-import BreezeModal from '../../../components/ui/BreezeModal.jsx';
-import BreezeInput from '../../../components/ui/BreezeInput.jsx';
-import BreezePageHeader from '../../../components/ui/BreezePageHeader.jsx';
+import BreezeIcon from '../../../components/ui/BreezeIcon.jsx';
 import {
-  ShieldAlert,
+  Users,
   ShieldCheck,
   UserCheck,
+  ShieldAlert,
   Search,
+  PlusCircle,
   Check,
   AlertCircle,
-  PlusCircle,
-  Users,
 } from 'lucide-react';
 import clsx from 'clsx';
-import { BreezeSkeleton } from '../../../components/ui/BreezeSkeleton.jsx';
 
 const ServerPlayers = () => {
   const { server } = useOutletContext();
-  const [data, setData] = useState({ players: [], whitelist: [], ops: [], bannedPlayers: [] });
-  const [activeTab, setActiveTab] = useState('ops');
+  const serverId = server?.id;
+
+  const [activeTab, setActiveTab] = useState('ops'); // 'ops' | 'whitelist' | 'bans'
+  const [ops, setOps] = useState([]);
+  const [whitelist, setWhitelist] = useState([]);
+  const [banned, setBanned] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [usernameInput, setUsernameInput] = useState('');
-  const [banModalOpen, setBanModalOpen] = useState(false);
-  const [banUsername, setBanUsername] = useState('');
-  const [banReason, setBanReason] = useState('Banned by operator');
-  const [statusMessage, setStatusMessage] = useState(null);
+  const [playerName, setPlayerName] = useState('');
+  const [toastMessage, setToastMessage] = useState(null);
 
-  const showNotification = (type, message) => {
-    setStatusMessage({ type, message });
-    setTimeout(() => setStatusMessage(null), 3500);
+  const showToast = (type, message) => {
+    setToastMessage({ type, message });
+    setTimeout(() => setToastMessage(null), 3500);
   };
 
-  const fetchPlayers = useCallback(async () => {
+  const fetchPlayerData = useCallback(async () => {
+    if (!serverId) return;
     try {
       setLoading(true);
-      const res = await api.get(`/servers/${server.id}/players`);
-      if (res.success && res.data) {
-        setData(res.data);
-      }
+      const [opsRes, wlRes, banRes] = await Promise.all([
+        api.get(`/servers/${serverId}/players/ops`).catch(() => ({ success: false, data: [] })),
+        api.get(`/servers/${serverId}/players/whitelist`).catch(() => ({ success: false, data: [] })),
+        api.get(`/servers/${serverId}/players/banned`).catch(() => ({ success: false, data: [] })),
+      ]);
+
+      if (opsRes.success) setOps(opsRes.data || []);
+      if (wlRes.success) setWhitelist(wlRes.data || []);
+      if (banRes.success) setBanned(banRes.data || []);
     } catch (err) {
-      console.error('Failed to load players:', err);
-      showNotification('error', err.message || 'Failed to fetch player lists');
+      console.error('Failed to load player data:', err);
     } finally {
       setLoading(false);
     }
-  }, [server.id]);
+  }, [serverId]);
 
   useEffect(() => {
-    fetchPlayers();
-  }, [fetchPlayers]);
+    fetchPlayerData();
+  }, [fetchPlayerData]);
 
-  const handleOp = async (username) => {
-    try {
-      await api.post(`/servers/${server.id}/players/op`, { username });
-      showNotification('success', `Granted operator to ${username}.`);
-      fetchPlayers();
-    } catch (err) {
-      showNotification('error', err.message);
-    }
-  };
-
-  const handleDeop = async (username) => {
-    try {
-      await api.post(`/servers/${server.id}/players/deop`, { username });
-      showNotification('success', `Removed operator from ${username}.`);
-      fetchPlayers();
-    } catch (err) {
-      showNotification('error', err.message);
-    }
-  };
-
-  const handleWhitelistAdd = async (username) => {
-    try {
-      await api.post(`/servers/${server.id}/players/whitelist`, { username });
-      showNotification('success', `Added ${username} to whitelist.`);
-      fetchPlayers();
-    } catch (err) {
-      showNotification('error', err.message);
-    }
-  };
-
-  const handleWhitelistRemove = async (username) => {
-    try {
-      await api.post(`/servers/${server.id}/players/unwhitelist`, { username });
-      showNotification('success', `Removed ${username} from whitelist.`);
-      fetchPlayers();
-    } catch (err) {
-      showNotification('error', err.message);
-    }
-  };
-
-  const handleBanSubmit = async (e) => {
-    e?.preventDefault();
-    if (!banUsername.trim()) return;
-    try {
-      await api.post(`/servers/${server.id}/players/ban`, {
-        username: banUsername.trim(),
-        reason: banReason.trim(),
-      });
-      setBanModalOpen(false);
-      setBanUsername('');
-      setBanReason('Banned by operator');
-      showNotification('success', `Banned ${banUsername}.`);
-      fetchPlayers();
-    } catch (err) {
-      showNotification('error', err.message);
-    }
-  };
-
-  const handleUnban = async (username) => {
-    try {
-      await api.post(`/servers/${server.id}/players/unban`, { username });
-      showNotification('success', `Pardoned / unbanned ${username}.`);
-      fetchPlayers();
-    } catch (err) {
-      showNotification('error', err.message);
-    }
-  };
-
-  const handleAddSubmit = (e) => {
+  const handleAddPlayer = async (e) => {
     e.preventDefault();
-    if (!usernameInput.trim()) return;
-    const cleanUser = usernameInput.trim();
-    if (activeTab === 'ops') handleOp(cleanUser);
-    if (activeTab === 'whitelist') handleWhitelistAdd(cleanUser);
-    if (activeTab === 'bans') {
-      setBanUsername(cleanUser);
-      setBanModalOpen(true);
+    if (!playerName.trim()) return;
+
+    try {
+      const endpoint =
+        activeTab === 'ops'
+          ? `/servers/${serverId}/players/ops`
+          : activeTab === 'whitelist'
+          ? `/servers/${serverId}/players/whitelist`
+          : `/servers/${serverId}/players/banned`;
+
+      const res = await api.post(endpoint, { username: playerName.trim() });
+      if (res.success) {
+        setPlayerName('');
+        showToast('success', `Added "${playerName.trim()}" to ${activeTab}.`);
+        fetchPlayerData();
+      } else {
+        throw new Error(res.error?.message || 'Action failed');
+      }
+    } catch (err) {
+      showToast('error', err.message);
     }
-    setUsernameInput('');
   };
 
-  const tabs = [
-    { id: 'ops', label: 'Operators', icon: ShieldCheck, count: data.ops.length },
-    { id: 'whitelist', label: 'Whitelist', icon: UserCheck, count: data.whitelist.length },
-    { id: 'bans', label: 'Bans', icon: ShieldAlert, count: data.bannedPlayers.length },
-  ];
+  const handleRemovePlayer = async (username) => {
+    try {
+      const endpoint =
+        activeTab === 'ops'
+          ? `/servers/${serverId}/players/ops/${encodeURIComponent(username)}`
+          : activeTab === 'whitelist'
+          ? `/servers/${serverId}/players/whitelist/${encodeURIComponent(username)}`
+          : `/servers/${serverId}/players/banned/${encodeURIComponent(username)}`;
+
+      const res = await api.delete(endpoint);
+      if (res.success) {
+        showToast('success', `Removed "${username}".`);
+        fetchPlayerData();
+      } else {
+        throw new Error(res.error?.message || 'Remove failed');
+      }
+    } catch (err) {
+      showToast('error', err.message);
+    }
+  };
+
+  const currentList =
+    activeTab === 'ops' ? ops : activeTab === 'whitelist' ? whitelist : banned;
+
+  const filteredList = currentList.filter((p) =>
+    (p.name || p.username || '').toLowerCase().includes(search.toLowerCase()),
+  );
 
   return (
-    <div className="flex flex-col gap-5 w-full">
-      {/* Page Header */}
-      <BreezePageHeader
-        caption="Player Access"
-        title="Player Management"
-        description="Manage server operators, whitelist permissions, and player restrictions."
-        icon={Users}
-      />
-
-      {/* Notification Banner */}
-      {statusMessage && (
+    <div className="w-full flex flex-col gap-5 max-w-7xl mx-auto">
+      {/* Toast Notification */}
+      {toastMessage && (
         <div
           className={clsx(
-            'p-3.5 rounded-2xl border-2 text-xs flex items-center gap-2.5',
-            statusMessage.type === 'success'
-              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-              : 'bg-red-500/10 border-red-500/30 text-red-400',
+            'p-3.5 rounded-2xl border-2 flex items-center justify-between text-xs transition-all duration-300',
+            toastMessage.type === 'error'
+              ? 'bg-red-500/10 border-red-500/30 text-red-400'
+              : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400',
           )}
         >
-          {statusMessage.type === 'success' ? <Check size={16} /> : <AlertCircle size={16} />}
-          <span>{statusMessage.message}</span>
+          <div className="flex items-center gap-2">
+            <BreezeIcon icon={toastMessage.type === 'error' ? AlertCircle : Check} size={15} />
+            <span>{toastMessage.message}</span>
+          </div>
+          <button onClick={() => setToastMessage(null)} className="font-bold ml-3 text-p4 hover:underline">
+            ✕
+          </button>
         </div>
       )}
 
-      {/* Tab bar & Quick add */}
-      <BreezeCard className="p-3.5 flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
-        <div className="flex items-center gap-1.5 p-1 bg-s1 border-2 border-s3 rounded-2xl self-start sm:self-auto">
-          {tabs.map((t) => {
-            const Icon = t.icon;
-            return (
-              <button
-                key={t.id}
-                onClick={() => {
-                  setActiveTab(t.id);
-                  setSearch('');
-                }}
-                className={clsx(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-300 cursor-pointer',
-                  activeTab === t.id
-                    ? 'g4 text-p1 border border-s4/40 shadow-sm'
-                    : 'text-p5 hover:text-p4 border border-transparent',
-                )}
-              >
-                <Icon size={14} />
-                <span>{t.label}</span>
-                <span className="text-[10px] opacity-70 font-mono">({t.count})</span>
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-          <div className="relative flex-1 sm:flex-initial">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-p5/50 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Filter list..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full sm:w-36 pl-8 pr-3 py-1.5 bg-s1 border-2 border-s3 rounded-xl text-xs text-p4 placeholder:text-p5/40 focus:outline-none focus:border-s4 transition-colors"
-            />
+      {/* Header & Tabs */}
+      <div className="p-4 bg-s2 border-2 border-s3 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1">
+            <BreezeIcon icon={Users} size={18} />
           </div>
-
-          <form onSubmit={handleAddSubmit} className="flex items-center gap-2 w-full sm:w-auto">
-            <input
-              type="text"
-              placeholder={`Add to ${activeTab}...`}
-              value={usernameInput}
-              onChange={(e) => setUsernameInput(e.target.value)}
-              className="bg-s1 border-2 border-s3 rounded-xl px-3 py-1.5 text-xs text-p4 placeholder:text-p5/50 focus:outline-none focus:border-s4 transition-colors flex-1 sm:w-44 font-mono"
-            />
-            <BreezeButton variant="primary" size="sm" type="submit" icon={PlusCircle}>
-              Add
-            </BreezeButton>
-          </form>
+          <div>
+            <h2 className="text-sm font-bold text-p4">Player Management</h2>
+            <p className="text-xs text-p5">Configure server operators, whitelist access, and player bans.</p>
+          </div>
         </div>
-      </BreezeCard>
 
-      {/* Players Table */}
-      <BreezeCard className="overflow-hidden">
+        {/* Tab Switcher */}
+        <div className="flex items-center gap-1.5 p-1 bg-s1 rounded-xl border border-s3 text-xs">
+          <button
+            onClick={() => setActiveTab('ops')}
+            className={clsx(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition-colors',
+              activeTab === 'ops' ? 'bg-s4/20 text-p1' : 'text-p5 hover:text-p4',
+            )}
+          >
+            <BreezeIcon icon={ShieldCheck} size={14} />
+            <span>Operators ({ops.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('whitelist')}
+            className={clsx(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition-colors',
+              activeTab === 'whitelist' ? 'bg-s4/20 text-p1' : 'text-p5 hover:text-p4',
+            )}
+          >
+            <BreezeIcon icon={UserCheck} size={14} />
+            <span>Whitelist ({whitelist.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('bans')}
+            className={clsx(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition-colors',
+              activeTab === 'bans' ? 'bg-red-500/20 text-red-400' : 'text-p5 hover:text-p4',
+            )}
+          >
+            <BreezeIcon icon={ShieldAlert} size={14} />
+            <span>Bans ({banned.length})</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Search & Add Player Bar */}
+      <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] gap-3">
+        <div className="relative">
+          <BreezeIcon icon={Search} size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-p5" />
+          <input
+            type="text"
+            placeholder={`Search ${activeTab}...`}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full bg-s2 border-2 border-s3 rounded-xl pl-9 pr-3 py-2 text-xs text-p4 focus:outline-none focus:border-s4"
+          />
+        </div>
+
+        <form onSubmit={handleAddPlayer} className="flex items-center gap-2">
+          <input
+            type="text"
+            placeholder="Minecraft username..."
+            value={playerName}
+            onChange={(e) => setPlayerName(e.target.value)}
+            className="bg-s2 border-2 border-s3 rounded-xl px-3.5 py-2 text-xs text-p4 focus:outline-none focus:border-s4"
+          />
+          <BreezeButton
+            type="submit"
+            variant="primary"
+            size="sm"
+            icon={PlusCircle}
+            disabled={!playerName.trim()}
+          >
+            Add
+          </BreezeButton>
+        </form>
+      </div>
+
+      {/* Players List Table */}
+      <div className="border-2 border-s3 rounded-2xl bg-s1 overflow-hidden">
         {loading ? (
-          <div className="p-6 flex flex-col gap-3">
-            <BreezeSkeleton className="h-8 w-full" />
-            <BreezeSkeleton className="h-8 w-full" />
-            <BreezeSkeleton className="h-8 w-full" />
+          <div className="p-16 flex flex-col items-center justify-center gap-3 text-p5">
+            <img src="/images/icons/Loader2.gif" alt="Loading" className="size-7 object-contain" />
+            <span className="text-xs font-mono">Loading player roster...</span>
+          </div>
+        ) : filteredList.length === 0 ? (
+          <div className="p-16 flex flex-col items-center justify-center gap-2 text-center text-p5">
+            <BreezeIcon icon={Users} size={28} className="text-p5/30 mb-1" />
+            <p className="text-xs font-semibold text-p4">No entries in {activeTab}</p>
+            <p className="text-[11px] text-p5/70">Add player usernames above to grant permissions or enforce rules.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b-2 border-s3 bg-s1 text-p5 font-semibold uppercase tracking-wider small-compact">
-                  <th className="py-3 px-4">Player</th>
-                  <th className="py-3 px-4">UUID / Details</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-s3/60 font-mono">
-                {activeTab === 'ops' && (
-                  data.ops.filter((op) => op.name.toLowerCase().includes(search.toLowerCase())).length === 0 ? (
-                    <tr>
-                      <td colSpan={3} className="py-12 text-center text-p5 font-sans">
-                        <Users size={24} className="mx-auto mb-2 text-p5/40" />
-                        <p className="font-semibold text-p4">No operators assigned</p>
-                        <p className="text-[11px] text-p5/70 mt-0.5">Use the form above to grant operator permissions to a player.</p>
-                      </td>
-                    </tr>
-                  ) : (
-                    data.ops
-                      .filter((op) => op.name.toLowerCase().includes(search.toLowerCase()))
-                      .map((op) => (
-                        <tr key={op.name} className="hover:bg-s5/30 transition-colors duration-300">
-                          <td className="py-2.5 px-4 font-bold text-p4 flex items-center gap-2">
-                            <ShieldCheck size={16} className="text-p1" />
-                            <span>{op.name}</span>
-                          </td>
-                          <td className="py-2.5 px-4 text-p5 small-2">{op.uuid || 'Offline Mode'}</td>
-                          <td className="py-2.5 px-4 text-right">
-                            <BreezeButton variant="destructive" size="xs" onClick={() => handleDeop(op.name)}>
-                              Remove OP
-                            </BreezeButton>
-                          </td>
-                        </tr>
-                      ))
-                  )
-                )}
+          <div className="divide-y divide-s3/40">
+            {filteredList.map((player, idx) => {
+              const nameStr = player.name || player.username || 'Unknown';
 
-                {activeTab === 'whitelist' && (
-                  data.whitelist.filter((wl) => wl.name.toLowerCase().includes(search.toLowerCase())).length === 0 ? (
-                    <tr>
-                      <td colSpan={3} className="py-12 text-center text-p5 font-sans">
-                        <UserCheck size={24} className="mx-auto mb-2 text-p5/40" />
-                        <p className="font-semibold text-p4">Whitelist is currently empty</p>
-                        <p className="text-[11px] text-p5/70 mt-0.5">When whitelist is enabled in server.properties, only approved players can join.</p>
-                      </td>
-                    </tr>
-                  ) : (
-                    data.whitelist
-                      .filter((wl) => wl.name.toLowerCase().includes(search.toLowerCase()))
-                      .map((wl) => (
-                        <tr key={wl.name} className="hover:bg-s5/30 transition-colors duration-300">
-                          <td className="py-2.5 px-4 font-bold text-p4 flex items-center gap-2">
-                            <UserCheck size={16} className="text-emerald-400" />
-                            <span>{wl.name}</span>
-                          </td>
-                          <td className="py-2.5 px-4 text-p5 small-2">{wl.uuid || 'Offline Mode'}</td>
-                          <td className="py-2.5 px-4 text-right">
-                            <BreezeButton variant="destructive" size="xs" onClick={() => handleWhitelistRemove(wl.name)}>
-                              Remove
-                            </BreezeButton>
-                          </td>
-                        </tr>
-                      ))
-                  )
-                )}
+              return (
+                <div key={idx} className="p-3.5 px-4 flex items-center justify-between gap-4 hover:bg-s5/20 transition-colors">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <img
+                      src={`https://mc-heads.net/avatar/${nameStr}/32`}
+                      alt={nameStr}
+                      className="size-8 rounded-lg border border-s3 bg-s2 flex-shrink-0"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                    <div className="min-w-0">
+                      <span className="text-xs font-bold text-p4 font-mono">{nameStr}</span>
+                      {player.level && (
+                        <span className="text-[10px] text-p5 ml-2 font-mono">Level {player.level}</span>
+                      )}
+                    </div>
+                  </div>
 
-                {activeTab === 'bans' && (
-                  data.bannedPlayers.filter((ban) => ban.name.toLowerCase().includes(search.toLowerCase())).length === 0 ? (
-                    <tr>
-                      <td colSpan={3} className="py-12 text-center text-p5 font-sans">
-                        <ShieldAlert size={24} className="mx-auto mb-2 text-p5/40" />
-                        <p className="font-semibold text-p4">No players are currently banned</p>
-                        <p className="text-[11px] text-p5/70 mt-0.5">Banned players and IP restrictions will appear here.</p>
-                      </td>
-                    </tr>
-                  ) : (
-                    data.bannedPlayers
-                      .filter((ban) => ban.name.toLowerCase().includes(search.toLowerCase()))
-                      .map((ban) => (
-                        <tr key={ban.name} className="hover:bg-s5/30 transition-colors duration-300">
-                          <td className="py-2.5 px-4 font-bold text-red-400 flex items-center gap-2">
-                            <ShieldAlert size={16} />
-                            <span>{ban.name}</span>
-                          </td>
-                          <td className="py-2.5 px-4 text-p5 small-2">
-                            Reason: {ban.reason || 'No reason specified'}
-                          </td>
-                          <td className="py-2.5 px-4 text-right">
-                            <BreezeButton variant="success" size="xs" onClick={() => handleUnban(ban.name)}>
-                              Pardon / Unban
-                            </BreezeButton>
-                          </td>
-                        </tr>
-                      ))
-                  )
-                )}
-              </tbody>
-            </table>
+                  <button
+                    onClick={() => handleRemovePlayer(nameStr)}
+                    className="px-2.5 py-1 rounded-xl text-xs font-semibold text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 transition-colors"
+                  >
+                    Remove
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
-      </BreezeCard>
-
-      {/* Ban Player Modal */}
-      <BreezeModal open={banModalOpen} onClose={() => setBanModalOpen(false)} title="Ban Player from Server">
-        <form onSubmit={handleBanSubmit} className="flex flex-col gap-4">
-          <BreezeInput
-            label="Player Username"
-            required
-            value={banUsername}
-            onChange={(e) => setBanUsername(e.target.value)}
-            inputClassName="font-mono"
-          />
-          <BreezeInput
-            label="Ban Reason"
-            placeholder="e.g. Griefing, Inappropriate behavior"
-            value={banReason}
-            onChange={(e) => setBanReason(e.target.value)}
-          />
-          <div className="flex justify-end gap-2 mt-2">
-            <BreezeButton variant="ghost" size="sm" type="button" onClick={() => setBanModalOpen(false)}>
-              Cancel
-            </BreezeButton>
-            <BreezeButton variant="destructive" size="sm" type="submit">
-              Confirm Ban
-            </BreezeButton>
-          </div>
-        </form>
-      </BreezeModal>
+      </div>
     </div>
   );
 };

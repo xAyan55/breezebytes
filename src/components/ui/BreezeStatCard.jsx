@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import BreezeIcon from './BreezeIcon.jsx';
 
 const BreezeStatCard = ({
   label,
@@ -30,21 +31,20 @@ const BreezeStatCard = ({
       {iconSource && (
         <div
           className={clsx(
-            'size-14 rounded-full border-2 border-s2 flex items-center justify-center shadow-500 transition-all duration-500 hover:border-s4 flex-shrink-0 bg-s1/60',
+            'size-14 rounded-2xl border-2 border-s3 flex items-center justify-center shadow-500 transition-all duration-500 hover:border-s4 flex-shrink-0 bg-s1/60',
             iconClassName || 'text-p1',
           )}
         >
-          {typeof iconSource === 'string' ? (
+          {typeof iconSource === 'string' && iconSource.startsWith('/') ? (
             <img
               src={iconSource}
               alt=""
-              className="size-10 object-contain z-2"
+              width={26}
+              height={26}
+              className="size-7 object-contain z-2"
             />
           ) : (
-            (() => {
-              const IconComp = iconSource;
-              return <IconComp size={22} />;
-            })()
+            <BreezeIcon icon={iconSource} size={26} />
           )}
         </div>
       )}

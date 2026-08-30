@@ -3,10 +3,10 @@ import api from '../../services/api.js';
 import BreezeCard from '../../../components/ui/BreezeCard.jsx';
 import BreezeStatCard from '../../../components/ui/BreezeStatCard.jsx';
 import BreezePageHeader from '../../../components/ui/BreezePageHeader.jsx';
+import BreezeIcon from '../../../components/ui/BreezeIcon.jsx';
 import {
   Shield,
   Cpu,
-  Loader2,
 } from 'lucide-react';
 
 const AdminOverview = () => {
@@ -28,7 +28,7 @@ const AdminOverview = () => {
   if (loading || !data) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[40vh] gap-3 text-p5">
-        <Loader2 className="animate-spin text-p1 size-8" />
+        <img src="/images/icons/Loader2.gif" alt="Loading" className="size-8 object-contain" />
         <p className="body-3 font-medium">Loading system metrics...</p>
       </div>
     );
@@ -64,7 +64,7 @@ const AdminOverview = () => {
       {/* Capacity */}
       <BreezeCard className="p-6 flex flex-col gap-6">
         <h2 className="base-bold text-p4 flex items-center gap-2">
-          <Cpu size={18} className="text-p1" />
+          <BreezeIcon icon={Cpu} size={18} className="text-p1" />
           <span>Global Capacity & Allocation Pools</span>
         </h2>
 

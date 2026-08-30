@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { useSocket } from '../../context/SocketContext.jsx';
 import api from '../../services/api.js';
 import BreezeButton from '../../../components/ui/BreezeButton.jsx';
+import BreezeIcon from '../../../components/ui/BreezeIcon.jsx';
 import {
   Terminal,
   Send,
@@ -286,14 +287,14 @@ const ServerConsole = () => {
         {fetchError && (
           <div className="p-3 rounded-2xl bg-amber-500/10 border-2 border-amber-500/30 text-amber-400 text-xs flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <AlertCircle size={15} />
+              <BreezeIcon icon={AlertCircle} size={15} />
               <span>{fetchError}</span>
             </div>
             <button
               onClick={fetchHistory}
               className="flex items-center gap-1 font-semibold hover:underline"
             >
-              <RefreshCw size={13} />
+              <BreezeIcon icon={RefreshCw} size={13} />
               <span>Retry</span>
             </button>
           </div>
@@ -304,7 +305,7 @@ const ServerConsole = () => {
           {/* Terminal Header / Toolbar */}
           <div className="px-4 py-3 bg-s2 border-b-2 border-s3 flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2.5">
-              <Terminal size={16} className="text-p1 flex-shrink-0" />
+              <BreezeIcon icon={Terminal} size={16} className="flex-shrink-0" />
               <span className="small-compact uppercase text-p4 font-bold tracking-wider text-xs">
                 Server Terminal
               </span>
@@ -342,7 +343,7 @@ const ServerConsole = () => {
                 )}
                 title="Toggle Console Auto-Scroll"
               >
-                <ArrowDownCircle size={14} className={clsx(autoScroll && 'text-p1')} />
+                <BreezeIcon icon={ArrowDownCircle} size={14} className={clsx(autoScroll && 'text-p1')} />
                 <span>Auto-Scroll</span>
               </button>
 
@@ -351,7 +352,7 @@ const ServerConsole = () => {
                 className="p-1.5 rounded-xl text-p5 hover:text-p4 hover:bg-s5/40 border border-transparent hover:border-s3 transition-all duration-300 cursor-pointer"
                 title="Copy Terminal Output"
               >
-                {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                {copied ? <BreezeIcon icon={Check} size={14} /> : <BreezeIcon icon={Copy} size={14} />}
               </button>
 
               <button
@@ -359,7 +360,7 @@ const ServerConsole = () => {
                 className="p-1.5 rounded-xl text-p5 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 transition-all duration-300 cursor-pointer"
                 title="Clear Terminal Output"
               >
-                <Trash2 size={14} />
+                <BreezeIcon icon={Trash2} size={14} />
               </button>
             </div>
           </div>
@@ -372,7 +373,7 @@ const ServerConsole = () => {
           >
             {logs.length === 0 ? (
               <div className="my-auto flex flex-col items-center justify-center gap-2 text-center p-6 select-none">
-                <Radio size={24} className="text-p5/30 animate-pulse" />
+                <BreezeIcon icon={Radio} size={24} className="text-p5/30 animate-pulse" />
                 <p className="text-p5/50 text-xs font-mono">
                   {isOnline
                     ? connected
@@ -395,7 +396,7 @@ const ServerConsole = () => {
                 onClick={scrollToBottom}
                 className="sticky bottom-2 self-center flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-s4 text-p4 text-xs font-bold shadow-500 border border-s4 hover:scale-105 transition-all duration-200 cursor-pointer z-20"
               >
-                <ChevronDown size={14} className="animate-bounce" />
+                <BreezeIcon icon={ChevronDown} size={14} className="animate-bounce" />
                 <span>Jump to latest</span>
               </button>
             )}
@@ -439,7 +440,7 @@ const ServerConsole = () => {
         <div className="border-2 border-s3 rounded-2xl bg-s2 p-3.5 flex items-center justify-between gap-3 hover:border-s4/60 transition-colors duration-300">
           <div className="flex items-center gap-3 min-w-0">
             <div className="size-9 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 flex-shrink-0">
-              <Wifi size={16} />
+              <BreezeIcon icon={Wifi} size={16} />
             </div>
             <div className="min-w-0">
               <span className="text-[10px] font-semibold text-p5/70 uppercase tracking-wider block font-sans">
@@ -456,7 +457,7 @@ const ServerConsole = () => {
               className="p-1.5 rounded-xl text-p5 hover:text-p1 hover:bg-s5/40 border border-transparent hover:border-s3 transition-colors cursor-pointer flex-shrink-0"
               title="Copy Address"
             >
-              {addrCopied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+              {addrCopied ? <BreezeIcon icon={Check} size={14} /> : <BreezeIcon icon={Copy} size={14} />}
             </button>
           )}
         </div>
@@ -464,7 +465,7 @@ const ServerConsole = () => {
         {/* Card 2: Uptime */}
         <div className="border-2 border-s3 rounded-2xl bg-s2 p-3.5 flex items-center gap-3 hover:border-s4/60 transition-colors duration-300">
           <div className="size-9 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 flex-shrink-0">
-            <Clock size={16} />
+            <BreezeIcon icon={Clock} size={16} />
           </div>
           <div className="min-w-0 flex-1">
             <span className="text-[10px] font-semibold text-p5/70 uppercase tracking-wider block font-sans">
@@ -488,7 +489,7 @@ const ServerConsole = () => {
         <div className="border-2 border-s3 rounded-2xl bg-s2 p-3.5 flex flex-col gap-2 hover:border-s4/60 transition-colors duration-300">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-semibold text-p5/70 uppercase tracking-wider flex items-center gap-1.5 font-sans">
-              <Cpu size={14} className="text-p1" />
+              <BreezeIcon icon={Cpu} size={14} />
               <span>CPU Load</span>
             </span>
             <span className="text-xs font-bold text-p4 font-mono">
@@ -508,7 +509,7 @@ const ServerConsole = () => {
         <div className="border-2 border-s3 rounded-2xl bg-s2 p-3.5 flex flex-col gap-2 hover:border-s4/60 transition-colors duration-300">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-semibold text-p5/70 uppercase tracking-wider flex items-center gap-1.5 font-sans">
-              <Activity size={14} className="text-p1" />
+              <BreezeIcon icon={Activity} size={14} />
               <span>Memory</span>
             </span>
             <span className="text-xs font-bold text-p4 font-mono">
@@ -528,7 +529,7 @@ const ServerConsole = () => {
         <div className="border-2 border-s3 rounded-2xl bg-s2 p-3.5 flex flex-col gap-2 hover:border-s4/60 transition-colors duration-300">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-semibold text-p5/70 uppercase tracking-wider flex items-center gap-1.5 font-sans">
-              <HardDrive size={14} className="text-p1" />
+              <BreezeIcon icon={HardDrive} size={14} />
               <span>Disk</span>
             </span>
             <span className="text-xs font-bold text-p4 font-mono">
@@ -548,7 +549,7 @@ const ServerConsole = () => {
         <div className="border-2 border-s3 rounded-2xl bg-s2 p-3.5 flex flex-col gap-2 hover:border-s4/60 transition-colors duration-300 text-xs">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-semibold text-p5/70 uppercase tracking-wider flex items-center gap-1.5 font-sans">
-              <Network size={14} className="text-p1" />
+              <BreezeIcon icon={Network} size={14} />
               <span>Port</span>
             </span>
             <span className="font-mono text-p4 font-semibold">
@@ -557,7 +558,7 @@ const ServerConsole = () => {
           </div>
           <div className="flex items-center justify-between pt-2 border-t border-s3/60">
             <span className="text-[10px] font-semibold text-p5/70 uppercase tracking-wider flex items-center gap-1.5 font-sans">
-              <Server size={14} className="text-p1" />
+              <BreezeIcon icon={Server} size={14} />
               <span>Node</span>
             </span>
             <span className="text-p4 font-bold truncate max-w-[150px]" title={server?.node?.name || server?.node?.fqdn}>

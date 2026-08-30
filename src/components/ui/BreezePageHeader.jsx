@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import BreezeIcon from './BreezeIcon.jsx';
 
 const BreezePageHeader = ({
   caption,
@@ -19,8 +20,8 @@ const BreezePageHeader = ({
         {caption && (
           <p className="caption">{caption}</p>
         )}
-        <h1 className="h6 text-p4 flex items-center gap-2">
-          {Icon && <Icon size={22} className="text-p1" />}
+        <h1 className="h6 text-p4 flex items-center gap-2.5">
+          {Icon && <BreezeIcon icon={Icon} size={24} className="text-p1" />}
           <span>{title}</span>
         </h1>
         {description && (
