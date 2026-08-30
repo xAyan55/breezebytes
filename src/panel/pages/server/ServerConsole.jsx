@@ -19,15 +19,24 @@ import {
   Network,
   Wifi,
   ChevronDown,
+  RefreshCw,
+  AlertCircle,
 } from 'lucide-react';
 import clsx from 'clsx';
 
 const MAX_LOG_LINES = 1000;
 
+// Module-level cache so navigating Console -> Files -> Console preserves active logs instantly
+const consoleLogCache = new Map(); // serverId -> logs[]
+
 const ServerConsole = () => {
   const { server, status } = useOutletContext();
-  const { subscribe, sendCommand } = useSocket();
-  const [logs, setLogs] = useState([]);
+  const { connected, subscribe, sendCommand } = useSocket();
+  const serverId = server?.id;
+
+  const [logs, setLogs] = useState(() => {
+    return consoleLogCache.get(serverId) || [];
+  });
   const [command, setCommand] = useState('');
   const [commandHistory, setCommandHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
@@ -35,6 +44,7 @@ const ServerConsole = () => {
   const [userScrolledUp, setUserScrolledUp] = useState(false);
   const [copied, setCopied] = useState(false);
   const [addrCopied, setAddrCopied] = useState(false);
+  const [fetchError, setFetchError] = useState(null);
   const [stats, setStats] = useState({
     cpu: 0,
     memory: 0,
@@ -45,33 +55,74 @@ const ServerConsole = () => {
   });
 
   const terminalContainerRef = useRef(null);
+  const isMountedRef = useRef(true);
 
-  // Initial load and WebSocket subscription
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchLogs = async () => {
-      try {
-        const res = await api.get(`/servers/${server.id}/logs`);
-        if (isMounted && res.success && Array.isArray(res.data)) {
-          setLogs(res.data.slice(-MAX_LOG_LINES));
-        }
-      } catch {
-        // ignore
+  // Helper to update logs state AND cache synchronously
+  const updateLogs = useCallback((updater) => {
+    setLogs((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      if (serverId) {
+        consoleLogCache.set(serverId, next);
       }
-    };
+      return next;
+    });
+  }, [serverId]);
 
-    fetchLogs();
+  // Merge historical logs with existing logs avoiding duplicates
+  const mergeLogs = useCallback((newLogs) => {
+    if (!Array.isArray(newLogs) || newLogs.length === 0) return;
+    updateLogs((prev) => {
+      if (prev.length === 0) {
+        return newLogs.slice(-MAX_LOG_LINES);
+      }
+      // If prev already has logs, merge by comparing recent entries
+      const prevTexts = new Set(prev.slice(-100).map((l) => (typeof l === 'string' ? l : l.text)));
+      const filtered = newLogs.filter((l) => {
+        const txt = typeof l === 'string' ? l : l.text;
+        return !prevTexts.has(txt);
+      });
+      return [...prev, ...filtered].slice(-MAX_LOG_LINES);
+    });
+  }, [updateLogs]);
 
-    const unsubConsole = subscribe(`server:${server.id}:console`, (event, data) => {
+  // Fetch initial history via HTTP
+  const fetchHistory = useCallback(async () => {
+    if (!serverId) return;
+    try {
+      setFetchError(null);
+      const res = await api.get(`/servers/${serverId}/logs`);
+      if (isMountedRef.current && res.success && Array.isArray(res.data)) {
+        mergeLogs(res.data);
+      }
+    } catch (err) {
+      if (isMountedRef.current) {
+        console.warn('Could not fetch server log history via HTTP:', err.message);
+      }
+    }
+  }, [serverId, mergeLogs]);
+
+  // WebSocket Subscription Lifecycle
+  useEffect(() => {
+    isMountedRef.current = true;
+    if (!serverId) return;
+
+    // 1. Fetch initial HTTP logs
+    fetchHistory();
+
+    // 2. Subscribe to live console stream
+    const unsubConsole = subscribe(`server:${serverId}:console`, (event, data) => {
+      if (!isMountedRef.current) return;
+
       if (event === 'console_line' && data) {
-        setLogs((prev) => [...prev.slice(-(MAX_LOG_LINES - 1)), data]);
+        updateLogs((prev) => [...prev.slice(-(MAX_LOG_LINES - 1)), data]);
       } else if (event === 'console_history' && Array.isArray(data)) {
-        setLogs(data.slice(-MAX_LOG_LINES));
+        mergeLogs(data);
       }
     });
 
-    const unsubStats = subscribe(`server:${server.id}:stats`, (event, data) => {
+    // 3. Subscribe to stats stream
+    const unsubStats = subscribe(`server:${serverId}:stats`, (event, data) => {
+      if (!isMountedRef.current) return;
       if (event === 'stats_update' && data) {
         setStats((prev) => ({
           ...prev,
@@ -83,11 +134,11 @@ const ServerConsole = () => {
     });
 
     return () => {
-      isMounted = false;
+      isMountedRef.current = false;
       unsubConsole();
       unsubStats();
     };
-  }, [server.id, server.memory, server.disk, subscribe]);
+  }, [serverId, server?.memory, server?.disk, subscribe, fetchHistory, updateLogs, mergeLogs]);
 
   // Handle scroll detection for user manual scrolling
   const handleScroll = useCallback(() => {
@@ -118,9 +169,9 @@ const ServerConsole = () => {
 
   const handleSendCommand = (e) => {
     e?.preventDefault();
-    if (!command.trim()) return;
+    if (!command.trim() || !serverId) return;
 
-    sendCommand(server.id, command.trim());
+    sendCommand(serverId, command.trim());
     setCommandHistory((prev) => [...prev, command.trim()]);
     setHistoryIndex(-1);
     setCommand('');
@@ -150,7 +201,9 @@ const ServerConsole = () => {
     }
   };
 
-  const clearConsole = () => setLogs([]);
+  const clearConsole = () => {
+    updateLogs([]);
+  };
 
   const copyConsole = () => {
     const text = logs.map((l) => (typeof l === 'string' ? l : l.text || '')).join('\n');
@@ -229,6 +282,23 @@ const ServerConsole = () => {
     <div className="w-full grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_310px] xl:grid-cols-[minmax(0,1fr)_330px] gap-5 items-start">
       {/* ===== Left: Dominant Console & Terminal Workspace (75-80%) ===== */}
       <div className="flex flex-col gap-4 min-w-0">
+        {/* Error Notice if log history failed */}
+        {fetchError && (
+          <div className="p-3 rounded-2xl bg-amber-500/10 border-2 border-amber-500/30 text-amber-400 text-xs flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <AlertCircle size={15} />
+              <span>{fetchError}</span>
+            </div>
+            <button
+              onClick={fetchHistory}
+              className="flex items-center gap-1 font-semibold hover:underline"
+            >
+              <RefreshCw size={13} />
+              <span>Retry</span>
+            </button>
+          </div>
+        )}
+
         {/* Terminal Box */}
         <div className="border-2 border-s3 rounded-2xl bg-s1 flex flex-col overflow-hidden min-w-0 relative shadow-sm">
           {/* Terminal Header / Toolbar */}
@@ -238,14 +308,26 @@ const ServerConsole = () => {
               <span className="small-compact uppercase text-p4 font-bold tracking-wider text-xs">
                 Server Terminal
               </span>
+
+              {/* Real Connection Status Indicator */}
               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-s1 border border-s3 text-[10px] font-medium text-p5">
                 <span
                   className={clsx(
                     'size-1.5 rounded-full',
-                    isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-p5/40',
+                    connected && isOnline
+                      ? 'bg-emerald-400 animate-pulse'
+                      : connected && !isOnline
+                      ? 'bg-p5/50'
+                      : 'bg-amber-400 animate-ping',
                   )}
                 />
-                {isOnline ? 'Live Stream' : 'Offline'}
+                <span>
+                  {connected
+                    ? isOnline
+                      ? 'Live Stream'
+                      : 'Server Offline'
+                    : 'Reconnecting...'}
+                </span>
               </span>
             </div>
 
@@ -291,10 +373,12 @@ const ServerConsole = () => {
             {logs.length === 0 ? (
               <div className="my-auto flex flex-col items-center justify-center gap-2 text-center p-6 select-none">
                 <Radio size={24} className="text-p5/30 animate-pulse" />
-                <p className="text-p5/40 text-xs font-mono">
+                <p className="text-p5/50 text-xs font-mono">
                   {isOnline
-                    ? 'Terminal connected. Streaming live server logs...'
-                    : 'Server is currently offline. Start the server to stream live logs.'}
+                    ? connected
+                      ? 'Waiting for server console output...'
+                      : 'Connecting to server console stream...'
+                    : 'Server is currently offline. Click Start in the header to power on and stream live logs.'}
                 </p>
               </div>
             ) : (
@@ -468,7 +552,7 @@ const ServerConsole = () => {
               <span>Port</span>
             </span>
             <span className="font-mono text-p4 font-semibold">
-              {server.allocation?.port ? `${server.allocation.port} (Primary)` : 'Unassigned'}
+              {server?.allocation?.port ? `${server.allocation.port} (Primary)` : 'Unassigned'}
             </span>
           </div>
           <div className="flex items-center justify-between pt-2 border-t border-s3/60">
@@ -476,8 +560,8 @@ const ServerConsole = () => {
               <Server size={14} className="text-p1" />
               <span>Node</span>
             </span>
-            <span className="text-p4 font-bold truncate max-w-[150px]" title={server.node?.name || server.node?.fqdn}>
-              {server.node?.name || server.node?.fqdn || 'Local Daemon'}
+            <span className="text-p4 font-bold truncate max-w-[150px]" title={server?.node?.name || server?.node?.fqdn}>
+              {server?.node?.name || server?.node?.fqdn || 'Local Daemon'}
             </span>
           </div>
         </div>

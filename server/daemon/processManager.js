@@ -48,8 +48,38 @@ class ProcessManager extends EventEmitter {
   }
 
   getLogs(serverId) {
-    const item = this.processes.get(Number(serverId));
-    return item ? item.logs : [];
+    const id = Number(serverId);
+    const item = this.processes.get(id);
+    if (item && item.logs && item.logs.length > 0) {
+      return item.logs;
+    }
+
+    // Fallback: Read latest log lines from logs/latest.log on disk if available
+    try {
+      const server = servers.findById(id);
+      if (server) {
+        const serverDir = this.getServerDir(server);
+        const logFile = path.join(serverDir, 'logs', 'latest.log');
+        if (fs.existsSync(logFile)) {
+          const content = fs.readFileSync(logFile, 'utf8');
+          const lines = content.split('\n').filter((l) => l.trim().length > 0).slice(-500);
+          const parsed = lines.map((line) => ({
+            timestamp: new Date().toISOString(),
+            text: line
+          }));
+          if (!this.processes.has(id)) {
+            this.processes.set(id, { proc: null, logs: parsed, status: server.status || 'offline', crashCount: 0 });
+          } else {
+            this.processes.get(id).logs = parsed;
+          }
+          return parsed;
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    return [];
   }
 
   getStatus(serverId) {
