@@ -135,8 +135,8 @@ const ServerPlayers = () => {
       {/* Header & Tabs */}
       <div className="p-4 bg-s2 border-2 border-s3 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1">
-            <BreezeIcon icon={Users} size={18} />
+          <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 shadow-inner">
+            <BreezeIcon icon={Users} size={20} />
           </div>
           <div>
             <h2 className="text-sm font-bold text-p4">Player Management</h2>
@@ -153,7 +153,7 @@ const ServerPlayers = () => {
               activeTab === 'ops' ? 'bg-s4/20 text-p1' : 'text-p5 hover:text-p4',
             )}
           >
-            <BreezeIcon icon={ShieldCheck} size={14} />
+            <BreezeIcon icon={ShieldCheck} size={16} />
             <span>Operators ({ops.length})</span>
           </button>
           <button
@@ -163,7 +163,7 @@ const ServerPlayers = () => {
               activeTab === 'whitelist' ? 'bg-s4/20 text-p1' : 'text-p5 hover:text-p4',
             )}
           >
-            <BreezeIcon icon={UserCheck} size={14} />
+            <BreezeIcon icon={UserCheck} size={16} />
             <span>Whitelist ({whitelist.length})</span>
           </button>
           <button
@@ -173,7 +173,7 @@ const ServerPlayers = () => {
               activeTab === 'bans' ? 'bg-red-500/20 text-red-400' : 'text-p5 hover:text-p4',
             )}
           >
-            <BreezeIcon icon={ShieldAlert} size={14} />
+            <BreezeIcon icon={ShieldAlert} size={16} />
             <span>Bans ({banned.length})</span>
           </button>
         </div>
@@ -182,7 +182,7 @@ const ServerPlayers = () => {
       {/* Search & Add Player Bar */}
       <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] gap-3">
         <div className="relative">
-          <BreezeIcon icon={Search} size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-p5" />
+          <BreezeIcon icon={Search} size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-p5" />
           <input
             type="text"
             placeholder={`Search ${activeTab}...`}
@@ -198,16 +198,16 @@ const ServerPlayers = () => {
             placeholder="Minecraft username..."
             value={playerName}
             onChange={(e) => setPlayerName(e.target.value)}
-            className="bg-s2 border-2 border-s3 rounded-xl px-3.5 py-2 text-xs text-p4 focus:outline-none focus:border-s4"
+            className="bg-s2 border-2 border-s3 rounded-xl px-3.5 py-2 text-xs text-p4 focus:outline-none focus:border-s4 min-w-[200px]"
           />
           <BreezeButton
             type="submit"
             variant="primary"
             size="sm"
-            icon={PlusCircle}
+            icon={UserCheck}
             disabled={!playerName.trim()}
           >
-            Add
+            Add Player
           </BreezeButton>
         </form>
       </div>
@@ -220,10 +220,10 @@ const ServerPlayers = () => {
             <span className="text-xs font-mono">Loading player roster...</span>
           </div>
         ) : filteredList.length === 0 ? (
-          <div className="p-16 flex flex-col items-center justify-center gap-2 text-center text-p5">
+          <div className="p-12 text-center text-p5 text-xs flex flex-col items-center justify-center gap-2">
             <BreezeIcon icon={Users} size={28} className="text-p5/30 mb-1" />
-            <p className="text-xs font-semibold text-p4">No entries in {activeTab}</p>
-            <p className="text-[11px] text-p5/70">Add player usernames above to grant permissions or enforce rules.</p>
+            <p className="font-semibold text-p4">No entries in {activeTab}</p>
+            <p className="text-[11px] text-p5/70">Add a player using their exact Minecraft username above.</p>
           </div>
         ) : (
           <div className="divide-y divide-s3/40">
@@ -251,9 +251,10 @@ const ServerPlayers = () => {
 
                   <button
                     onClick={() => handleRemovePlayer(nameStr)}
-                    className="px-2.5 py-1 rounded-xl text-xs font-semibold text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 transition-colors"
+                    className="p-1.5 rounded-lg text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                    title={`Remove ${nameStr}`}
                   >
-                    Remove
+                    <BreezeIcon icon={Trash2} size={15} />
                   </button>
                 </div>
               );

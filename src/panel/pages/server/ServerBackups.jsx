@@ -145,8 +145,8 @@ const ServerBackups = () => {
       {/* Header Bar */}
       <div className="p-4 bg-s2 border-2 border-s3 rounded-2xl flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1">
-            <BreezeIcon icon={Archive} size={18} />
+          <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 shadow-inner">
+            <BreezeIcon icon={Archive} size={20} />
           </div>
           <div>
             <h2 className="text-sm font-bold text-p4">Server Backups</h2>
@@ -188,7 +188,7 @@ const ServerBackups = () => {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="size-10 rounded-xl bg-s1 border border-s3 flex items-center justify-center text-p1 flex-shrink-0">
-                    <BreezeIcon icon={HardDrive} size={18} />
+                    <BreezeIcon icon={HardDrive} size={20} />
                   </div>
                   <div className="min-w-0">
                     <h3 className="text-xs font-bold text-p4 truncate" title={b.name}>
@@ -198,7 +198,7 @@ const ServerBackups = () => {
                       <span>{formatBytes(b.size_bytes)}</span>
                       <span>•</span>
                       <span className="flex items-center gap-1">
-                        <BreezeIcon icon={Calendar} size={12} />
+                        <BreezeIcon icon={Calendar} size={13} />
                         <span>{new Date(b.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
                       </span>
                     </div>
@@ -223,7 +223,7 @@ const ServerBackups = () => {
                   download
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-s1 border border-s3 text-p4 hover:text-p1 hover:border-s4 transition-colors"
                 >
-                  <BreezeIcon icon={Download} size={13} />
+                  <BreezeIcon icon={Download} size={14} />
                   <span>Download</span>
                 </a>
 
@@ -239,10 +239,10 @@ const ServerBackups = () => {
 
                 <button
                   onClick={() => handleDeleteBackup(b)}
-                  className="p-2 rounded-xl text-p5 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 transition-colors cursor-pointer"
+                  className="p-2 rounded-xl text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
                   title="Delete Backup"
                 >
-                  <BreezeIcon icon={Trash2} size={14} />
+                  <BreezeIcon icon={Trash2} size={15} />
                 </button>
               </div>
             </div>

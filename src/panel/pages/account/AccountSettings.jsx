@@ -8,7 +8,6 @@ import BreezeInput from '../../../components/ui/BreezeInput.jsx';
 import BreezePageHeader from '../../../components/ui/BreezePageHeader.jsx';
 import BreezeBadge from '../../../components/ui/BreezeBadge.jsx';
 import BreezeIcon from '../../../components/ui/BreezeIcon.jsx';
-import { User, PlusCircle, Trash2, Copy, Check, AlertCircle, Key, Lock, Shield } from 'lucide-react';
 
 const AccountSettings = () => {
   const { user } = useAuth();
@@ -121,7 +120,7 @@ const AccountSettings = () => {
         caption="Security & Identity"
         title="Account Settings"
         description="Manage your credentials, authentication preferences, and developer API keys."
-        icon={User}
+        icon="User"
       />
 
       {/* Notification Banner */}
@@ -134,7 +133,7 @@ const AccountSettings = () => {
           }`}
         >
           <div className="flex items-center gap-2">
-            <BreezeIcon icon={statusMessage.type === 'error' ? AlertCircle : Check} size={16} />
+            <BreezeIcon icon={statusMessage.type === 'error' ? 'AlertCircle' : 'Check'} size={16} />
             <span>{statusMessage.message}</span>
           </div>
           <button onClick={() => setStatusMessage(null)} className="font-bold ml-3 text-p4 hover:underline">
@@ -146,8 +145,8 @@ const AccountSettings = () => {
       {/* Profile Overview */}
       <BreezeCard className="p-6">
         <div className="flex items-center gap-4">
-          <div className="size-16 rounded-2xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 font-bold text-2xl uppercase">
-            {user?.username ? user.username.charAt(0) : <BreezeIcon icon={User} size={28} />}
+          <div className="size-16 rounded-2xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 font-bold text-2xl uppercase shadow-inner">
+            {user?.username ? user.username.charAt(0) : <BreezeIcon icon="User" size={28} />}
           </div>
           <div>
             <h2 className="h6 text-p4 flex items-center gap-2">
@@ -158,8 +157,8 @@ const AccountSettings = () => {
             </h2>
             <p className="body-3 text-p5 mt-0.5">{user?.email}</p>
             <div className="flex items-center gap-3 mt-2 text-xs text-p5">
-              <span className="flex items-center gap-1">
-                <BreezeIcon icon={Shield} size={14} className="text-p1" />
+              <span className="flex items-center gap-1.5">
+                <BreezeIcon icon="Shield" size={16} className="text-p1" />
                 <span>Standard Authentication</span>
               </span>
             </div>
@@ -169,9 +168,9 @@ const AccountSettings = () => {
 
       {/* Password Change */}
       <BreezeCard className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <BreezeIcon icon={Lock} size={20} className="text-p1" />
-          <h2 className="base-bold text-p4">Security & Password</h2>
+        <div className="flex items-center gap-2.5 mb-4">
+          <BreezeIcon icon="Lock" size={20} className="text-p1" />
+          <h2 className="base-bold text-p4 text-sm font-semibold uppercase tracking-wider">Security & Password</h2>
         </div>
         <form onSubmit={handlePasswordChange} className="flex flex-col gap-4">
           <BreezeInput
@@ -207,17 +206,17 @@ const AccountSettings = () => {
       {/* API Keys */}
       <BreezeCard className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <BreezeIcon icon={Key} size={20} className="text-p1" />
+          <div className="flex items-center gap-2.5">
+            <BreezeIcon icon="Key" size={20} className="text-p1" />
             <div>
-              <h2 className="base-bold text-p4">Developer API Keys</h2>
+              <h2 className="base-bold text-p4 text-sm font-semibold uppercase tracking-wider">Developer API Keys</h2>
               <p className="body-3 text-p5">Generate bearer tokens to programmatically manage your servers.</p>
             </div>
           </div>
           <BreezeButton
             variant="secondary"
             size="sm"
-            icon={PlusCircle}
+            icon="PlusCircle"
             onClick={() => {
               setCreatedKey(null);
               setKeyModal(true);
@@ -243,10 +242,10 @@ const AccountSettings = () => {
                 </div>
                 <button
                   onClick={() => handleDeleteKey(k.id)}
-                  className="p-2 text-p5 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors"
+                  className="p-2 text-p5 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer"
                   title="Revoke Key"
                 >
-                  <BreezeIcon icon={Trash2} size={16} />
+                  <BreezeIcon icon="Trash2" size={16} />
                 </button>
               </div>
             ))}
@@ -256,7 +255,7 @@ const AccountSettings = () => {
 
       {/* Create Key Modal */}
       <BreezeModal
-        isOpen={keyModal}
+        open={keyModal}
         onClose={() => setKeyModal(false)}
         title={createdKey ? 'API Key Created' : 'Generate API Key'}
       >
@@ -269,9 +268,9 @@ const AccountSettings = () => {
               <span className="truncate">{createdKey.token}</span>
               <button
                 onClick={copyKey}
-                className="p-1.5 rounded-lg bg-s2 border border-s3 hover:text-p1 transition-colors flex-shrink-0"
+                className="p-1.5 rounded-lg bg-s2 border border-s3 hover:text-p1 transition-colors flex-shrink-0 cursor-pointer"
               >
-                {copied ? <BreezeIcon icon={Check} size={14} className="text-emerald-400" /> : <BreezeIcon icon={Copy} size={14} />}
+                {copied ? <BreezeIcon icon="Check" size={14} className="text-emerald-400" /> : <BreezeIcon icon="Copy" size={14} />}
               </button>
             </div>
             <div className="flex justify-end pt-2">

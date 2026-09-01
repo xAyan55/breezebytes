@@ -123,8 +123,8 @@ const ServerNetwork = () => {
       {/* Header Bar */}
       <div className="p-4 bg-s2 border-2 border-s3 rounded-2xl flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1">
-            <BreezeIcon icon={Network} size={18} />
+          <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 shadow-inner">
+            <BreezeIcon icon={Network} size={20} />
           </div>
           <div>
             <h2 className="text-sm font-bold text-p4">Port Allocations</h2>
@@ -169,17 +169,17 @@ const ServerNetwork = () => {
                 return (
                   <tr key={alloc.id} className="hover:bg-s5/30 transition-colors">
                     <td className="py-3 px-4 font-mono font-medium text-p4 flex items-center gap-2">
-                      <BreezeIcon icon={Network} size={15} className="text-p1 flex-shrink-0" />
+                      <BreezeIcon icon={Network} size={16} className="text-p1 flex-shrink-0" />
                       <span>{host}</span>
                       <button
                         onClick={() => copyAddress(alloc)}
-                        className="p-1 rounded-md text-p5 hover:text-p1 transition-colors"
+                        className="p-1 rounded-md text-p5 hover:text-p1 transition-colors cursor-pointer"
                         title="Copy Address"
                       >
                         {copiedId === alloc.id ? (
-                          <BreezeIcon icon={Check} size={13} className="text-emerald-400" />
+                          <BreezeIcon icon={Check} size={14} className="text-emerald-400" />
                         ) : (
-                          <BreezeIcon icon={Copy} size={13} />
+                          <BreezeIcon icon={Copy} size={14} />
                         )}
                       </button>
                     </td>
@@ -202,19 +202,19 @@ const ServerNetwork = () => {
                         {!alloc.is_primary && (
                           <button
                             onClick={() => handleSetPrimary(alloc)}
-                            className="px-2.5 py-1 rounded-xl bg-s2 border border-s3 text-p4 hover:text-p1 hover:border-s4 transition-colors font-semibold flex items-center gap-1 text-[11px]"
+                            className="px-2.5 py-1 rounded-xl bg-s2 border border-s3 text-p4 hover:text-p1 hover:border-s4 transition-colors font-semibold flex items-center gap-1 text-[11px] cursor-pointer"
                           >
-                            <BreezeIcon icon={CheckCircle2} size={12} />
+                            <BreezeIcon icon={CheckCircle2} size={13} />
                             <span>Set Primary</span>
                           </button>
                         )}
                         {!alloc.is_primary && (
                           <button
                             onClick={() => handleUnassign(alloc)}
-                            className="p-1.5 rounded-xl text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                            className="p-1.5 rounded-xl text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
                             title="Unassign Port"
                           >
-                            <BreezeIcon icon={Trash2} size={14} />
+                            <BreezeIcon icon={Trash2} size={15} />
                           </button>
                         )}
                       </div>

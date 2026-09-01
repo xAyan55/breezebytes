@@ -8,7 +8,6 @@ import BreezePageHeader from '../../../components/ui/BreezePageHeader.jsx';
 import BreezeBadge from '../../../components/ui/BreezeBadge.jsx';
 import BreezeIcon from '../../../components/ui/BreezeIcon.jsx';
 import { BreezeSkeleton } from '../../../components/ui/BreezeSkeleton.jsx';
-import { Users, PlusCircle, Trash2, UserX, UserCheck, Check, AlertCircle } from 'lucide-react';
 import clsx from 'clsx';
 
 const AdminUsers = () => {
@@ -92,12 +91,12 @@ const AdminUsers = () => {
         caption="Administration"
         title="User Accounts"
         description="Manage user access, role assignments, and account suspensions across the cluster."
-        icon={Users}
+        icon="Users"
       >
         <BreezeButton
           variant="primary"
           size="md"
-          icon={PlusCircle}
+          icon="PlusCircle"
           onClick={() => setModalOpen(true)}
         >
           New User
@@ -114,7 +113,7 @@ const AdminUsers = () => {
               : 'bg-red-500/10 border-red-500/30 text-red-400',
           )}
         >
-          <BreezeIcon icon={statusMessage.type === 'success' ? Check : AlertCircle} size={16} />
+          <BreezeIcon icon={statusMessage.type === 'success' ? 'Check' : 'AlertCircle'} size={16} />
           <span>{statusMessage.message}</span>
         </div>
       )}
@@ -169,17 +168,17 @@ const AdminUsers = () => {
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => handleSuspendToggle(u)}
-                          className="p-1.5 rounded-xl text-p5 hover:text-amber-400 hover:bg-amber-500/10 transition-colors"
+                          className="p-1.5 rounded-xl text-p5 hover:text-amber-400 hover:bg-amber-500/10 transition-colors cursor-pointer"
                           title={u.is_suspended ? 'Unsuspend' : 'Suspend'}
                         >
-                          <BreezeIcon icon={u.is_suspended ? UserCheck : UserX} size={16} />
+                          <BreezeIcon icon={u.is_suspended ? 'UserCheck' : 'User'} size={16} />
                         </button>
                         <button
                           onClick={() => handleDelete(u.id, u.username)}
-                          className="p-1.5 rounded-xl text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                          className="p-1.5 rounded-xl text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
                           title="Delete User"
                         >
-                          <BreezeIcon icon={Trash2} size={16} />
+                          <BreezeIcon icon="Trash2" size={16} />
                         </button>
                       </div>
                     </td>

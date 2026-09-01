@@ -38,7 +38,7 @@ const BreezeButton = ({
   ...props
 }) => {
   const isDisabled = disabled || loading;
-  const iconSize = size === 'lg' ? 18 : size === 'xs' ? 13 : 15;
+  const iconSize = size === 'lg' ? 20 : size === 'sm' ? 16 : size === 'xs' ? 14 : 18;
 
   return (
     <Component

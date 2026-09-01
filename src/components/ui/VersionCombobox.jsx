@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import clsx from 'clsx';
-import { Search, ChevronDown, Check, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import BreezeIcon from './BreezeIcon.jsx';
 import { filterVersions } from '../../panel/services/mcjarsService.js';
 
 const VersionCombobox = ({
@@ -130,7 +130,7 @@ const VersionCombobox = ({
             error && 'border-red-500/50',
           )}
         >
-          <Search size={16} className="text-p5/50 flex-shrink-0 mr-3 pointer-events-none" />
+          <BreezeIcon name="Search" size={16} className="text-p5/50 flex-shrink-0 mr-3 pointer-events-none" />
 
           <input
             ref={inputRef}
@@ -151,7 +151,7 @@ const VersionCombobox = ({
 
           <div className="flex items-center gap-2 flex-shrink-0 ml-2">
             {loading ? (
-              <Loader2 size={16} className="animate-spin text-p1" />
+              <BreezeIcon name="Loader2" size={16} className="text-p1" />
             ) : (
               <button
                 type="button"
@@ -162,8 +162,9 @@ const VersionCombobox = ({
                 }}
                 className="p-1 rounded-lg text-p5 hover:text-p4 transition-colors"
               >
-                <ChevronDown
-                  size={16}
+                <BreezeIcon
+                  name="ChevronDown"
+                  size={15}
                   className={clsx('transition-transform duration-300', isOpen && 'rotate-180 text-p1')}
                 />
               </button>
@@ -176,7 +177,7 @@ const VersionCombobox = ({
       {error && (
         <div className="flex items-center justify-between p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-400 mt-1">
           <div className="flex items-center gap-2">
-            <AlertCircle size={15} />
+            <BreezeIcon name="AlertCircle" size={15} />
             <span>{error}</span>
           </div>
           {onRetry && (
@@ -185,7 +186,7 @@ const VersionCombobox = ({
               onClick={onRetry}
               className="flex items-center gap-1 font-semibold text-p1 hover:underline ml-2"
             >
-              <RefreshCw size={12} />
+              <BreezeIcon name="RefreshCw" size={12} />
               <span>Retry</span>
             </button>
           )}
@@ -205,7 +206,7 @@ const VersionCombobox = ({
           <div ref={listRef} className="max-h-60 overflow-y-auto p-1.5 flex flex-col gap-0.5 scroll-hide">
             {filtered.length === 0 ? (
               <div className="p-6 text-center text-p5 flex flex-col items-center gap-1.5">
-                <Search size={20} className="text-p5/40 mb-1" />
+                <BreezeIcon name="Search" size={20} className="text-p5/40 mb-1" />
                 <p className="text-xs font-semibold text-p4">No matching versions</p>
                 <p className="text-[11px] text-p5/70">
                   Version &ldquo;{searchQuery}&rdquo; is not available for this software.
@@ -246,7 +247,7 @@ const VersionCombobox = ({
 
                     <div className="flex items-center gap-3">
                       <span className="text-[11px] text-p5/60 font-mono">Java {vObj.java || 21}</span>
-                      {isSelected && <Check size={15} className="text-p1 flex-shrink-0" />}
+                      {isSelected && <BreezeIcon name="Check" size={15} className="text-p1 flex-shrink-0" />}
                     </div>
                   </div>
                 );

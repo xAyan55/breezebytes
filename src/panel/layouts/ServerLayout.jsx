@@ -225,13 +225,13 @@ const ServerLayout = () => {
               className="hidden lg:flex p-2 rounded-xl text-p5 hover:text-p4 hover:bg-s5/60 transition-colors cursor-pointer"
               title={collapsed ? 'Expand Sidebar (Ctrl+B)' : 'Collapse Sidebar (Ctrl+B)'}
             >
-              <BreezeIcon icon={PanelLeft} size={18} />
+              <BreezeIcon icon={PanelLeft} size={20} />
             </button>
 
             {/* Close Button (Mobile) */}
             <button
               onClick={() => setMobileOpen(false)}
-              className="lg:hidden p-2 rounded-xl text-p5 hover:text-p4 hover:bg-s5/60 transition-colors"
+              className="lg:hidden p-2 rounded-xl text-p5 hover:text-p4 hover:bg-s5/60 transition-colors cursor-pointer"
             >
               <BreezeIcon icon={X} size={20} />
             </button>
@@ -307,7 +307,7 @@ const ServerLayout = () => {
               >
                 <BreezeIcon
                   icon={item.icon}
-                  size={18}
+                  size={20}
                   className={clsx(
                     'flex-shrink-0 transition-transform duration-300 group-hover:scale-110',
                     isActive ? 'scale-105' : 'opacity-80 group-hover:opacity-100',
@@ -331,7 +331,7 @@ const ServerLayout = () => {
                 : 'gap-3 px-3.5 py-2.5',
             )}
           >
-            <BreezeIcon icon={ArrowLeft} size={18} className="flex-shrink-0 transition-transform duration-300 group-hover:-translate-x-1" />
+            <BreezeIcon icon={ArrowLeft} size={20} className="flex-shrink-0 transition-transform duration-300 group-hover:-translate-x-1" />
             {(!collapsed || mobileOpen) && <span>Back to Servers</span>}
           </Link>
         </div>
@@ -361,7 +361,7 @@ const ServerLayout = () => {
             className="p-1.5 rounded-xl text-p5 hover:text-p4 hover:bg-s5/50 transition-colors"
             title="Back to Servers"
           >
-            <BreezeIcon icon={ArrowLeft} size={18} />
+            <BreezeIcon icon={ArrowLeft} size={20} />
           </Link>
         </header>
 
@@ -371,7 +371,7 @@ const ServerLayout = () => {
             {/* Error Notification Banner if power action fails */}
             {errorMessage && (
               <div className="mb-4 p-3.5 rounded-2xl bg-red-500/10 border-2 border-red-500/30 flex items-center gap-2.5 text-xs text-red-400">
-                <BreezeIcon icon={AlertCircle} size={16} className="flex-shrink-0" />
+                <BreezeIcon icon={AlertCircle} size={18} className="flex-shrink-0" />
                 <span>{errorMessage}</span>
               </div>
             )}

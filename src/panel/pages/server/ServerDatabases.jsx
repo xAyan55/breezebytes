@@ -114,8 +114,8 @@ const ServerDatabases = () => {
       {/* Header Bar */}
       <div className="p-4 bg-s2 border-2 border-s3 rounded-2xl flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1">
-            <BreezeIcon icon={Database} size={18} />
+          <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 shadow-inner">
+            <BreezeIcon icon={Database} size={20} />
           </div>
           <div>
             <h2 className="text-sm font-bold text-p4">Managed Databases</h2>
@@ -157,7 +157,7 @@ const ServerDatabases = () => {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="size-10 rounded-xl bg-s1 border border-s3 flex items-center justify-center text-p1 flex-shrink-0">
-                    <BreezeIcon icon={Database} size={18} />
+                    <BreezeIcon icon={Database} size={20} />
                   </div>
                   <div className="min-w-0">
                     <h3 className="text-xs font-bold text-p4 font-mono truncate">{db.database_name}</h3>
@@ -196,10 +196,10 @@ const ServerDatabases = () => {
 
                 <button
                   onClick={() => handleDelete(db)}
-                  className="p-2 rounded-xl text-p5 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 transition-colors cursor-pointer"
+                  className="p-2 rounded-xl text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
                   title="Drop Database"
                 >
-                  <BreezeIcon icon={Trash2} size={14} />
+                  <BreezeIcon icon={Trash2} size={15} />
                 </button>
               </div>
             </div>

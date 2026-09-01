@@ -324,7 +324,7 @@ const ServerFiles = () => {
                   currentPath === '/' ? 'bg-s4/20 text-p1' : 'text-p5 hover:text-p4 hover:bg-s5/50',
                 )}
               >
-                <BreezeIcon icon={FolderOpen} size={15} />
+                <BreezeIcon icon={FolderOpen} size={16} />
                 <span>/</span>
               </button>
 
@@ -334,7 +334,7 @@ const ServerFiles = () => {
 
                 return (
                   <div key={subPath} className="flex items-center gap-1 flex-shrink-0">
-                    <BreezeIcon icon={ChevronRight} size={12} className="text-p5/50" />
+                    <BreezeIcon icon={ChevronRight} size={13} className="text-p5/50" />
                     <button
                       onClick={() => handleNavigate(subPath)}
                       className={clsx(
@@ -353,7 +353,7 @@ const ServerFiles = () => {
             <div className="flex items-center gap-2 flex-wrap">
               {/* Search Filter */}
               <div className="relative">
-                <BreezeIcon icon={Search} size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-p5" />
+                <BreezeIcon icon={Search} size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-p5" />
                 <input
                   type="text"
                   placeholder="Filter files..."
@@ -404,7 +404,7 @@ const ServerFiles = () => {
                 className="p-2 rounded-xl bg-s1 border border-s3 text-p5 hover:text-p4 hover:border-s4 transition-colors cursor-pointer"
                 title="Refresh Directory"
               >
-                <BreezeIcon icon={RefreshCw} size={14} />
+                <BreezeIcon icon={RefreshCw} size={16} />
               </button>
             </div>
           </div>
@@ -452,9 +452,9 @@ const ServerFiles = () => {
                       >
                         <td className="py-3 px-4 font-mono font-medium text-p4 flex items-center gap-3">
                           {isDir ? (
-                            <BreezeIcon icon={FolderOpen} size={17} className="text-p1 flex-shrink-0" />
+                            <BreezeIcon icon={FolderOpen} size={18} className="text-p1 flex-shrink-0" />
                           ) : (
-                            <BreezeIcon icon={FileCode} size={17} className="text-p5 group-hover:text-p4 flex-shrink-0" />
+                            <BreezeIcon icon={FileCode} size={18} className="text-p5 group-hover:text-p4 flex-shrink-0" />
                           )}
                           <span className={clsx(isDir && 'font-bold text-p1/90 group-hover:underline')}>
                             {file.name}
@@ -476,14 +476,14 @@ const ServerFiles = () => {
                               className="p-1.5 rounded-lg text-p5 hover:text-p4 hover:bg-s5/60 transition-colors"
                               title="Rename Item"
                             >
-                              <BreezeIcon icon={Edit} size={14} />
+                              <BreezeIcon icon={Edit} size={15} />
                             </button>
                             <button
                               onClick={() => handleDeleteItem(file)}
                               className="p-1.5 rounded-lg text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                               title="Delete Item"
                             >
-                              <BreezeIcon icon={Trash2} size={14} />
+                              <BreezeIcon icon={Trash2} size={15} />
                             </button>
                           </div>
                         </td>

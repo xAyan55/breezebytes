@@ -267,7 +267,7 @@ const CreateServer = () => {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
             <div className="p-3.5 rounded-2xl bg-s1 border border-s3 flex flex-col gap-1">
               <span className="text-[10px] text-p5 uppercase font-sans font-semibold flex items-center gap-1.5">
-                <BreezeIcon icon={HardDrive} size={12} className="text-p1" />
+                <BreezeIcon icon={HardDrive} size={16} className="text-p1" />
                 <span>Memory</span>
               </span>
               <span className="text-sm font-bold text-p4 mt-1">2048 MB</span>
@@ -276,7 +276,7 @@ const CreateServer = () => {
 
             <div className="p-3.5 rounded-2xl bg-s1 border border-s3 flex flex-col gap-1">
               <span className="text-[10px] text-p5 uppercase font-sans font-semibold flex items-center gap-1.5">
-                <BreezeIcon icon={HardDrive} size={12} className="text-p1" />
+                <BreezeIcon icon={HardDrive} size={16} className="text-p1" />
                 <span>Disk</span>
               </span>
               <span className="text-sm font-bold text-p4 mt-1">10240 MB</span>
@@ -285,7 +285,7 @@ const CreateServer = () => {
 
             <div className="p-3.5 rounded-2xl bg-s1 border border-s3 flex flex-col gap-1">
               <span className="text-[10px] text-p5 uppercase font-sans font-semibold flex items-center gap-1.5">
-                <BreezeIcon icon={Cpu} size={12} className="text-p1" />
+                <BreezeIcon icon={Cpu} size={16} className="text-p1" />
                 <span>CPU Limit</span>
               </span>
               <span className="text-sm font-bold text-p4 mt-1">100%</span>
@@ -294,7 +294,7 @@ const CreateServer = () => {
 
             <div className="p-3.5 rounded-2xl bg-s1 border border-s3 flex flex-col gap-1">
               <span className="text-[10px] text-p5 uppercase font-sans font-semibold flex items-center gap-1.5">
-                <BreezeIcon icon={Network} size={12} className="text-p1" />
+                <BreezeIcon icon={Network} size={16} className="text-p1" />
                 <span>Port</span>
               </span>
               <span className="text-sm font-bold text-p4 mt-1">Auto-assigned</span>

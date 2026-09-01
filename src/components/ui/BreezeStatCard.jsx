@@ -31,7 +31,7 @@ const BreezeStatCard = ({
       {iconSource && (
         <div
           className={clsx(
-            'size-14 rounded-2xl border-2 border-s3 flex items-center justify-center shadow-500 transition-all duration-500 hover:border-s4 flex-shrink-0 bg-s1/60',
+            'size-13 sm:size-14 rounded-2xl border-2 border-s3 flex items-center justify-center shadow-500 transition-all duration-500 hover:border-s4 flex-shrink-0 bg-s1/60',
             iconClassName || 'text-p1',
           )}
         >
@@ -39,12 +39,12 @@ const BreezeStatCard = ({
             <img
               src={iconSource}
               alt=""
-              width={26}
-              height={26}
-              className="size-7 object-contain z-2"
+              width={28}
+              height={28}
+              className="size-7 sm:size-8 object-contain z-2"
             />
           ) : (
-            <BreezeIcon icon={iconSource} size={26} />
+            <BreezeIcon icon={iconSource} size={28} />
           )}
         </div>
       )}

@@ -4,10 +4,6 @@ import BreezeCard from '../../../components/ui/BreezeCard.jsx';
 import BreezeStatCard from '../../../components/ui/BreezeStatCard.jsx';
 import BreezePageHeader from '../../../components/ui/BreezePageHeader.jsx';
 import BreezeIcon from '../../../components/ui/BreezeIcon.jsx';
-import {
-  Shield,
-  Cpu,
-} from 'lucide-react';
 
 const AdminOverview = () => {
   const [data, setData] = useState(null);
@@ -19,8 +15,11 @@ const AdminOverview = () => {
         setLoading(true);
         const res = await api.get('/admin/overview');
         if (res.success && res.data) setData(res.data);
-      } catch (err) { console.error('Failed to load admin overview:', err); }
-      finally { setLoading(false); }
+      } catch (err) {
+        console.error('Failed to load admin overview:', err);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchOverview();
   }, []);
@@ -40,31 +39,39 @@ const AdminOverview = () => {
         caption="Administration"
         title="System Administration Overview"
         description="Platform capacity, node utilization, and daemon health."
-        icon={Shield}
+        icon="Shield"
       />
 
       {/* Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <BreezeStatCard label="Total Users" value={data.users.total} image="/images/detail-1.png" />
-        <BreezeStatCard label="Active Nodes" value={data.nodes.total} image="/images/detail-2.png" />
+        <BreezeStatCard
+          label="Total Users"
+          value={data.users.total}
+          icon="Users"
+        />
+        <BreezeStatCard
+          label="Active Nodes"
+          value={data.nodes.total}
+          icon="HardDrive"
+        />
         <BreezeStatCard
           label="Total Servers"
           value={data.servers.total}
           subtitle={`${data.servers.running} running`}
-          image="/images/detail-3.png"
+          icon="Server"
         />
         <BreezeStatCard
           label="Port Allocations"
           value={`${data.allocations.used} / ${data.allocations.total}`}
           subtitle={`${data.allocations.free} available`}
-          image="/images/detail-4.png"
+          icon="Network"
         />
       </div>
 
       {/* Capacity */}
       <BreezeCard className="p-6 flex flex-col gap-6">
-        <h2 className="base-bold text-p4 flex items-center gap-2">
-          <BreezeIcon icon={Cpu} size={18} className="text-p1" />
+        <h2 className="base-bold text-p4 flex items-center gap-2.5">
+          <BreezeIcon icon="Cpu" size={20} className="text-p1" />
           <span>Global Capacity & Allocation Pools</span>
         </h2>
 

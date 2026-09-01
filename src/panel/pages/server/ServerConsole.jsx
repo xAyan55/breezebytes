@@ -305,7 +305,7 @@ const ServerConsole = () => {
           {/* Terminal Header / Toolbar */}
           <div className="px-4 py-3 bg-s2 border-b-2 border-s3 flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2.5">
-              <BreezeIcon icon={Terminal} size={16} className="flex-shrink-0" />
+              <BreezeIcon icon={Terminal} size={18} className="flex-shrink-0" />
               <span className="small-compact uppercase text-p4 font-bold tracking-wider text-xs">
                 Server Terminal
               </span>
@@ -343,7 +343,7 @@ const ServerConsole = () => {
                 )}
                 title="Toggle Console Auto-Scroll"
               >
-                <BreezeIcon icon={ArrowDownCircle} size={14} className={clsx(autoScroll && 'text-p1')} />
+                <BreezeIcon icon={ArrowDownCircle} size={16} className={clsx(autoScroll && 'text-p1')} />
                 <span>Auto-Scroll</span>
               </button>
 
@@ -352,7 +352,7 @@ const ServerConsole = () => {
                 className="p-1.5 rounded-xl text-p5 hover:text-p4 hover:bg-s5/40 border border-transparent hover:border-s3 transition-all duration-300 cursor-pointer"
                 title="Copy Terminal Output"
               >
-                {copied ? <BreezeIcon icon={Check} size={14} /> : <BreezeIcon icon={Copy} size={14} />}
+                {copied ? <BreezeIcon icon={Check} size={16} /> : <BreezeIcon icon={Copy} size={16} />}
               </button>
 
               <button
@@ -360,7 +360,7 @@ const ServerConsole = () => {
                 className="p-1.5 rounded-xl text-p5 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 transition-all duration-300 cursor-pointer"
                 title="Clear Terminal Output"
               >
-                <BreezeIcon icon={Trash2} size={14} />
+                <BreezeIcon icon={Trash2} size={16} />
               </button>
             </div>
           </div>
@@ -373,7 +373,7 @@ const ServerConsole = () => {
           >
             {logs.length === 0 ? (
               <div className="my-auto flex flex-col items-center justify-center gap-2 text-center p-6 select-none">
-                <BreezeIcon icon={Radio} size={24} className="text-p5/30 animate-pulse" />
+                <BreezeIcon icon={Radio} size={28} className="text-p5/30 animate-pulse" />
                 <p className="text-p5/50 text-xs font-mono">
                   {isOnline
                     ? connected
@@ -434,19 +434,19 @@ const ServerConsole = () => {
         </div>
       </div>
 
-      {/* ===== Right: Single Compact Live Resource Sidebar (20-25%) ===== */}
+      {/* ===== Right: Consistent 7-Metric Telemetry Sidebar ===== */}
       <div className="flex flex-col gap-3 min-w-0">
         {/* Card 1: Address */}
         <div className="border-2 border-s3 rounded-2xl bg-s2 p-3.5 flex items-center justify-between gap-3 hover:border-s4/60 transition-colors duration-300">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="size-9 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 flex-shrink-0">
-              <BreezeIcon icon={Wifi} size={16} />
+            <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 flex-shrink-0 shadow-inner">
+              <BreezeIcon icon={Wifi} size={22} />
             </div>
             <div className="min-w-0">
               <span className="text-[10px] font-semibold text-p5/70 uppercase tracking-wider block font-sans">
                 Address
               </span>
-              <span className="text-xs font-semibold text-p4 font-mono tracking-wide block truncate select-all">
+              <span className="text-xs font-bold text-p4 font-mono tracking-wide block truncate select-all">
                 {serverAddress}
               </span>
             </div>
@@ -457,15 +457,15 @@ const ServerConsole = () => {
               className="p-1.5 rounded-xl text-p5 hover:text-p1 hover:bg-s5/40 border border-transparent hover:border-s3 transition-colors cursor-pointer flex-shrink-0"
               title="Copy Address"
             >
-              {addrCopied ? <BreezeIcon icon={Check} size={14} /> : <BreezeIcon icon={Copy} size={14} />}
+              {addrCopied ? <BreezeIcon icon={Check} size={15} /> : <BreezeIcon icon={Copy} size={15} />}
             </button>
           )}
         </div>
 
         {/* Card 2: Uptime */}
         <div className="border-2 border-s3 rounded-2xl bg-s2 p-3.5 flex items-center gap-3 hover:border-s4/60 transition-colors duration-300">
-          <div className="size-9 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 flex-shrink-0">
-            <BreezeIcon icon={Clock} size={16} />
+          <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 flex-shrink-0 shadow-inner">
+            <BreezeIcon icon={Clock} size={22} />
           </div>
           <div className="min-w-0 flex-1">
             <span className="text-[10px] font-semibold text-p5/70 uppercase tracking-wider block font-sans">
@@ -485,17 +485,23 @@ const ServerConsole = () => {
           </div>
         </div>
 
-        {/* Card 3: CPU Load with Visual Progress Bar */}
-        <div className="border-2 border-s3 rounded-2xl bg-s2 p-3.5 flex flex-col gap-2 hover:border-s4/60 transition-colors duration-300">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-semibold text-p5/70 uppercase tracking-wider flex items-center gap-1.5 font-sans">
-              <BreezeIcon icon={Cpu} size={14} />
-              <span>CPU Load</span>
-            </span>
-            <span className="text-xs font-bold text-p4 font-mono">
-              {isOnline ? `${stats.cpu}%` : '0%'}
-              <span className="text-p5/50 font-normal text-[10px]"> / {cpuLimit}%</span>
-            </span>
+        {/* Card 3: CPU Load */}
+        <div className="border-2 border-s3 rounded-2xl bg-s2 p-3.5 flex flex-col gap-2.5 hover:border-s4/60 transition-colors duration-300">
+          <div className="flex items-center gap-3">
+            <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 flex-shrink-0 shadow-inner">
+              <BreezeIcon icon={Cpu} size={22} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="text-[10px] font-semibold text-p5/70 uppercase tracking-wider block font-sans">
+                CPU Load
+              </span>
+              <div className="flex items-baseline justify-between">
+                <span className="text-xs font-bold text-p4 font-mono">
+                  {isOnline ? `${stats.cpu}%` : '0%'}
+                </span>
+                <span className="text-p5/60 text-[10px] font-mono">Limit: {cpuLimit}%</span>
+              </div>
+            </div>
           </div>
           <div className="w-full bg-s1 rounded-full h-1.5 overflow-hidden border border-s3">
             <div
@@ -505,17 +511,23 @@ const ServerConsole = () => {
           </div>
         </div>
 
-        {/* Card 4: Memory Usage with Visual Progress Bar */}
-        <div className="border-2 border-s3 rounded-2xl bg-s2 p-3.5 flex flex-col gap-2 hover:border-s4/60 transition-colors duration-300">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-semibold text-p5/70 uppercase tracking-wider flex items-center gap-1.5 font-sans">
-              <BreezeIcon icon={Activity} size={14} />
-              <span>Memory</span>
-            </span>
-            <span className="text-xs font-bold text-p4 font-mono">
-              {isOnline ? formatMb(stats.memory) : '0 MB'}
-              <span className="text-p5/50 font-normal text-[10px]"> / {formatMb(totalRam)}</span>
-            </span>
+        {/* Card 4: Memory Usage */}
+        <div className="border-2 border-s3 rounded-2xl bg-s2 p-3.5 flex flex-col gap-2.5 hover:border-s4/60 transition-colors duration-300">
+          <div className="flex items-center gap-3">
+            <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 flex-shrink-0 shadow-inner">
+              <BreezeIcon icon={Activity} size={22} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="text-[10px] font-semibold text-p5/70 uppercase tracking-wider block font-sans">
+                Memory
+              </span>
+              <div className="flex items-baseline justify-between">
+                <span className="text-xs font-bold text-p4 font-mono">
+                  {isOnline ? formatMb(stats.memory) : '0 MB'}
+                </span>
+                <span className="text-p5/60 text-[10px] font-mono">{formatMb(totalRam)}</span>
+              </div>
+            </div>
           </div>
           <div className="w-full bg-s1 rounded-full h-1.5 overflow-hidden border border-s3">
             <div
@@ -525,17 +537,23 @@ const ServerConsole = () => {
           </div>
         </div>
 
-        {/* Card 5: Disk Usage with Visual Progress Bar */}
-        <div className="border-2 border-s3 rounded-2xl bg-s2 p-3.5 flex flex-col gap-2 hover:border-s4/60 transition-colors duration-300">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-semibold text-p5/70 uppercase tracking-wider flex items-center gap-1.5 font-sans">
-              <BreezeIcon icon={HardDrive} size={14} />
-              <span>Disk</span>
-            </span>
-            <span className="text-xs font-bold text-p4 font-mono">
-              {formatMb(stats.disk)}
-              <span className="text-p5/50 font-normal text-[10px]"> / {formatMb(totalDisk)}</span>
-            </span>
+        {/* Card 5: Disk Usage */}
+        <div className="border-2 border-s3 rounded-2xl bg-s2 p-3.5 flex flex-col gap-2.5 hover:border-s4/60 transition-colors duration-300">
+          <div className="flex items-center gap-3">
+            <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 flex-shrink-0 shadow-inner">
+              <BreezeIcon icon={HardDrive} size={22} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="text-[10px] font-semibold text-p5/70 uppercase tracking-wider block font-sans">
+                Disk
+              </span>
+              <div className="flex items-baseline justify-between">
+                <span className="text-xs font-bold text-p4 font-mono">
+                  {formatMb(stats.disk)}
+                </span>
+                <span className="text-p5/60 text-[10px] font-mono">{formatMb(totalDisk)}</span>
+              </div>
+            </div>
           </div>
           <div className="w-full bg-s1 rounded-full h-1.5 overflow-hidden border border-s3">
             <div
@@ -545,23 +563,31 @@ const ServerConsole = () => {
           </div>
         </div>
 
-        {/* Card 6: Network Port & Node (Combined compact) */}
-        <div className="border-2 border-s3 rounded-2xl bg-s2 p-3.5 flex flex-col gap-2 hover:border-s4/60 transition-colors duration-300 text-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-semibold text-p5/70 uppercase tracking-wider flex items-center gap-1.5 font-sans">
-              <BreezeIcon icon={Network} size={14} />
-              <span>Port</span>
+        {/* Card 6: Network Port */}
+        <div className="border-2 border-s3 rounded-2xl bg-s2 p-3.5 flex items-center gap-3 hover:border-s4/60 transition-colors duration-300">
+          <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 flex-shrink-0 shadow-inner">
+            <BreezeIcon icon={Network} size={22} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-[10px] font-semibold text-p5/70 uppercase tracking-wider block font-sans">
+              Primary Port
             </span>
-            <span className="font-mono text-p4 font-semibold">
-              {server?.allocation?.port ? `${server.allocation.port} (Primary)` : 'Unassigned'}
+            <span className="text-xs font-bold text-p4 font-mono block truncate">
+              {server?.allocation?.port ? `#${server.allocation.port}` : 'Unassigned'}
             </span>
           </div>
-          <div className="flex items-center justify-between pt-2 border-t border-s3/60">
-            <span className="text-[10px] font-semibold text-p5/70 uppercase tracking-wider flex items-center gap-1.5 font-sans">
-              <BreezeIcon icon={Server} size={14} />
-              <span>Node</span>
+        </div>
+
+        {/* Card 7: Host Node */}
+        <div className="border-2 border-s3 rounded-2xl bg-s2 p-3.5 flex items-center gap-3 hover:border-s4/60 transition-colors duration-300">
+          <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 flex-shrink-0 shadow-inner">
+            <BreezeIcon icon={Server} size={22} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-[10px] font-semibold text-p5/70 uppercase tracking-wider block font-sans">
+              Host Node
             </span>
-            <span className="text-p4 font-bold truncate max-w-[150px]" title={server?.node?.name || server?.node?.fqdn}>
+            <span className="text-xs font-bold text-p4 font-sans block truncate" title={server?.node?.name || server?.node?.fqdn}>
               {server?.node?.name || server?.node?.fqdn || 'Local Daemon'}
             </span>
           </div>

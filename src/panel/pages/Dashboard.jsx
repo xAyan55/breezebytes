@@ -242,9 +242,9 @@ const Dashboard = () => {
                           title="Copy Server Address"
                         >
                           {copiedId === server.id ? (
-                            <BreezeIcon icon={Check} size={13} />
+                            <BreezeIcon icon={Check} size={14} className="text-emerald-400" />
                           ) : (
-                            <BreezeIcon icon={Copy} size={13} />
+                            <BreezeIcon icon={Copy} size={14} />
                           )}
                         </button>
                       )}
@@ -277,7 +277,7 @@ const Dashboard = () => {
                       className="text-xs font-semibold text-p1 hover:underline flex items-center gap-1 group/link"
                     >
                       <span>Open Console</span>
-                      <BreezeIcon icon={ArrowRight} size={13} className="group-hover/link:translate-x-0.5 transition-transform" />
+                      <BreezeIcon icon={ArrowRight} size={14} className="group-hover/link:translate-x-0.5 transition-transform" />
                     </Link>
                   </div>
                 </BreezeCard>
@@ -303,7 +303,7 @@ const Dashboard = () => {
             </div>
           ) : activity.length === 0 ? (
             <div className="p-10 text-center text-p5 text-xs flex flex-col items-center justify-center gap-2">
-              <BreezeIcon icon={Terminal} size={24} className="text-p5/40 mb-1" />
+              <BreezeIcon icon={Terminal} size={28} className="text-p5/40 mb-1" />
               <p className="font-semibold text-p4">No recent activity logged</p>
               <p className="text-[11px] text-p5/70">Server creations, starts, and modifications will show up here in real time.</p>
             </div>
@@ -313,7 +313,7 @@ const Dashboard = () => {
                 <div key={log.id} className="p-4 flex items-center justify-between gap-4 hover:bg-s5/20 transition-colors">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="size-8 rounded-xl bg-s1 border border-s3 flex items-center justify-center text-p1 flex-shrink-0">
-                      <BreezeIcon icon={Terminal} size={14} />
+                      <BreezeIcon icon={Terminal} size={16} />
                     </div>
                     <div className="min-w-0">
                       <p className="text-p4 font-semibold font-sans capitalize truncate">

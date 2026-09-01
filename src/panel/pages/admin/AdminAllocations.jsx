@@ -8,7 +8,6 @@ import BreezePageHeader from '../../../components/ui/BreezePageHeader.jsx';
 import BreezeBadge from '../../../components/ui/BreezeBadge.jsx';
 import BreezeIcon from '../../../components/ui/BreezeIcon.jsx';
 import { BreezeSkeleton } from '../../../components/ui/BreezeSkeleton.jsx';
-import { Network, PlusCircle, Trash2, Check, AlertCircle } from 'lucide-react';
 import clsx from 'clsx';
 
 const AdminAllocations = () => {
@@ -77,12 +76,12 @@ const AdminAllocations = () => {
         caption="Administration"
         title="Port Allocation Pool"
         description="Assign IP/Port combinations available for Minecraft servers across cluster nodes."
-        icon={Network}
+        icon="Network"
       >
         <BreezeButton
           variant="primary"
           size="md"
-          icon={PlusCircle}
+          icon="PlusCircle"
           onClick={() => setModalOpen(true)}
         >
           Create Allocations
@@ -99,7 +98,7 @@ const AdminAllocations = () => {
               : 'bg-red-500/10 border-red-500/30 text-red-400',
           )}
         >
-          <BreezeIcon icon={statusMessage.type === 'success' ? Check : AlertCircle} size={16} />
+          <BreezeIcon icon={statusMessage.type === 'success' ? 'Check' : 'AlertCircle'} size={16} />
           <span>{statusMessage.message}</span>
         </div>
       )}
@@ -142,10 +141,10 @@ const AdminAllocations = () => {
                       {!a.server_id && (
                         <button
                           onClick={() => handleDelete(a.id)}
-                          className="p-1.5 rounded-xl text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                          className="p-1.5 rounded-xl text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
                           title="Delete Allocation"
                         >
-                          <BreezeIcon icon={Trash2} size={15} />
+                          <BreezeIcon icon="Trash2" size={15} />
                         </button>
                       )}
                     </td>

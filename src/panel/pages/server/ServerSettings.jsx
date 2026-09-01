@@ -158,7 +158,7 @@ const ServerSettings = () => {
             className="p-6 border-2 border-s3 rounded-2xl bg-s2 flex flex-col gap-5 shadow-sm"
           >
             <div className="flex items-center gap-2.5 pb-3 border-b-2 border-s3">
-              <BreezeIcon icon={Settings} size={18} className="text-p1" />
+              <BreezeIcon icon={Settings} size={20} className="text-p1" />
               <h2 className="base-bold text-p4 text-sm font-semibold uppercase tracking-wider">
                 General Settings
               </h2>
@@ -202,7 +202,7 @@ const ServerSettings = () => {
           {/* Software Reinstall Card */}
           <div className="p-6 border-2 border-s3 rounded-2xl bg-s2 flex flex-col gap-4 shadow-sm">
             <div className="flex items-center gap-2.5 pb-3 border-b-2 border-s3">
-              <BreezeIcon icon={RefreshCw} size={18} className="text-amber-400" />
+              <BreezeIcon icon={RefreshCw} size={20} className="text-amber-400" />
               <h2 className="base-bold text-p4 text-sm font-semibold uppercase tracking-wider">
                 Reinstall Server Software
               </h2>
@@ -231,7 +231,7 @@ const ServerSettings = () => {
           {/* Server Specifications Card */}
           <div className="p-6 border-2 border-s3 rounded-2xl bg-s2 flex flex-col gap-4 shadow-sm">
             <div className="flex items-center gap-2.5 pb-3 border-b-2 border-s3">
-              <BreezeIcon icon={Server} size={18} className="text-p1" />
+              <BreezeIcon icon={Server} size={20} className="text-p1" />
               <h2 className="base-bold text-p4 text-sm font-semibold uppercase tracking-wider">
                 Server Specifications
               </h2>
@@ -240,7 +240,7 @@ const ServerSettings = () => {
             <div className="divide-y divide-s3/60 text-xs font-mono">
               <div className="py-2.5 flex items-center justify-between">
                 <span className="text-p5 font-sans flex items-center gap-1.5">
-                  <BreezeIcon icon={Layers} size={13} className="text-p1" />
+                  <BreezeIcon icon={Layers} size={16} className="text-p1" />
                   <span>Software</span>
                 </span>
                 <span className="text-p4 font-bold capitalize flex items-center gap-1.5">
@@ -251,7 +251,7 @@ const ServerSettings = () => {
 
               <div className="py-2.5 flex items-center justify-between">
                 <span className="text-p5 font-sans flex items-center gap-1.5">
-                  <BreezeIcon icon={Globe} size={13} className="text-p1" />
+                  <BreezeIcon icon={Globe} size={16} className="text-p1" />
                   <span>Minecraft Version</span>
                 </span>
                 <span className="text-p4 font-bold">{server?.minecraft_version || 'Latest'}</span>
@@ -259,7 +259,7 @@ const ServerSettings = () => {
 
               <div className="py-2.5 flex items-center justify-between">
                 <span className="text-p5 font-sans flex items-center gap-1.5">
-                  <BreezeIcon icon={Activity} size={13} className="text-p1" />
+                  <BreezeIcon icon={Activity} size={16} className="text-p1" />
                   <span>Memory Allocation</span>
                 </span>
                 <span className="text-p4 font-bold">{formatGb(server?.memory)} ({server?.memory} MB)</span>
@@ -267,7 +267,7 @@ const ServerSettings = () => {
 
               <div className="py-2.5 flex items-center justify-between">
                 <span className="text-p5 font-sans flex items-center gap-1.5">
-                  <BreezeIcon icon={Cpu} size={13} className="text-p1" />
+                  <BreezeIcon icon={Cpu} size={16} className="text-p1" />
                   <span>CPU Limit</span>
                 </span>
                 <span className="text-p4 font-bold">{server?.cpu || 100}%</span>
@@ -275,7 +275,7 @@ const ServerSettings = () => {
 
               <div className="py-2.5 flex items-center justify-between">
                 <span className="text-p5 font-sans flex items-center gap-1.5">
-                  <BreezeIcon icon={HardDrive} size={13} className="text-p1" />
+                  <BreezeIcon icon={HardDrive} size={16} className="text-p1" />
                   <span>Storage Allocation</span>
                 </span>
                 <span className="text-p4 font-bold">{formatGb(server?.disk)}</span>
@@ -283,7 +283,7 @@ const ServerSettings = () => {
 
               <div className="py-2.5 flex items-center justify-between">
                 <span className="text-p5 font-sans flex items-center gap-1.5">
-                  <BreezeIcon icon={Server} size={13} className="text-p1" />
+                  <BreezeIcon icon={Server} size={16} className="text-p1" />
                   <span>Host Node</span>
                 </span>
                 <span className="text-p4 font-bold truncate max-w-[180px]">
@@ -293,16 +293,16 @@ const ServerSettings = () => {
 
               <div className="py-2.5 flex items-center justify-between">
                 <span className="text-p5 font-sans flex items-center gap-1.5">
-                  <BreezeIcon icon={Hash} size={13} className="text-p1" />
+                  <BreezeIcon icon={Hash} size={16} className="text-p1" />
                   <span>Server UUID</span>
                 </span>
                 <button
                   onClick={copyUuid}
-                  className="text-p5 hover:text-p1 flex items-center gap-1.5 truncate max-w-[180px]"
+                  className="text-p5 hover:text-p1 flex items-center gap-1.5 truncate max-w-[180px] cursor-pointer"
                   title="Copy Server UUID"
                 >
                   <span className="truncate">{server?.uuid || server?.id}</span>
-                  {copiedUuid ? <BreezeIcon icon={Check} size={13} className="text-emerald-400" /> : <BreezeIcon icon={Copy} size={13} />}
+                  {copiedUuid ? <BreezeIcon icon={Check} size={14} className="text-emerald-400" /> : <BreezeIcon icon={Copy} size={14} />}
                 </button>
               </div>
             </div>
@@ -311,7 +311,7 @@ const ServerSettings = () => {
           {/* Danger Zone */}
           <div className="p-6 border-2 border-red-500/30 rounded-2xl bg-red-500/5 flex flex-col gap-4 shadow-sm">
             <div className="flex items-center gap-2.5 pb-3 border-b-2 border-red-500/20">
-              <BreezeIcon icon={AlertTriangle} size={18} className="text-red-400" />
+              <BreezeIcon icon={AlertTriangle} size={20} className="text-red-400" />
               <h2 className="base-bold text-red-400 text-sm font-semibold uppercase tracking-wider">
                 Danger Zone
               </h2>

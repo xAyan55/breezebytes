@@ -143,8 +143,8 @@ const ServerSchedules = () => {
       {/* Header Bar */}
       <div className="p-4 bg-s2 border-2 border-s3 rounded-2xl flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1">
-            <BreezeIcon icon={Calendar} size={18} />
+          <div className="size-10 rounded-xl bg-s1 border-2 border-s3 flex items-center justify-center text-p1 shadow-inner">
+            <BreezeIcon icon={Calendar} size={20} />
           </div>
           <div>
             <h2 className="text-sm font-bold text-p4">Scheduled Tasks</h2>
@@ -186,7 +186,7 @@ const ServerSchedules = () => {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="size-10 rounded-xl bg-s1 border border-s3 flex items-center justify-center text-p1 flex-shrink-0">
-                    <BreezeIcon icon={Calendar} size={18} />
+                    <BreezeIcon icon={Calendar} size={20} />
                   </div>
                   <div className="min-w-0">
                     <h3 className="text-xs font-bold text-p4 truncate">{s.name}</h3>
@@ -220,8 +220,8 @@ const ServerSchedules = () => {
               )}
 
               <div className="pt-3 border-t border-s3/60 flex items-center justify-between">
-                <span className="text-[10px] text-p5 flex items-center gap-1 font-mono">
-                  <BreezeIcon icon={Clock} size={12} />
+                <span className="text-[10px] text-p5 flex items-center gap-1.5 font-mono">
+                  <BreezeIcon icon={Clock} size={13} />
                   <span>Last run: {s.last_run ? new Date(s.last_run).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Never'}</span>
                 </span>
 
@@ -238,10 +238,10 @@ const ServerSchedules = () => {
 
                   <button
                     onClick={() => handleDelete(s)}
-                    className="p-2 rounded-xl text-p5 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 transition-colors cursor-pointer"
+                    className="p-2 rounded-xl text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
                     title="Delete Schedule"
                   >
-                    <BreezeIcon icon={Trash2} size={14} />
+                    <BreezeIcon icon={Trash2} size={15} />
                   </button>
                 </div>
               </div>

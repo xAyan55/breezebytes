@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import BreezeButton from './BreezeButton.jsx';
+import BreezeIcon from './BreezeIcon.jsx';
 
 const BreezeEmptyState = ({
   icon: Icon,
@@ -21,18 +22,17 @@ const BreezeEmptyState = ({
       )}
     >
       {iconSource && (
-        <div className="size-16 rounded-full border-2 border-s2 bg-s1 flex items-center justify-center text-p1 shadow-500 hover:border-s4 transition-all duration-500 mb-2">
-          {typeof iconSource === 'string' ? (
+        <div className="size-16 rounded-2xl border-2 border-s3 bg-s1 flex items-center justify-center text-p1 shadow-500 hover:border-s4 transition-all duration-500 mb-2">
+          {typeof iconSource === 'string' && iconSource.startsWith('/') ? (
             <img
               src={iconSource}
               alt=""
-              className="size-11 object-contain z-2"
+              width={36}
+              height={36}
+              className="size-9 object-contain z-2"
             />
           ) : (
-            (() => {
-              const IconComp = iconSource;
-              return <IconComp size={26} />;
-            })()
+            <BreezeIcon icon={iconSource} size={30} />
           )}
         </div>
       )}

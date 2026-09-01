@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import clsx from 'clsx';
-import { X } from 'lucide-react';
+import BreezeIcon from './BreezeIcon.jsx';
 
 const BreezeModal = ({ open, onClose, title, children, className }) => {
   useEffect(() => {
@@ -46,7 +46,7 @@ const BreezeModal = ({ open, onClose, title, children, className }) => {
               className="p-1 rounded-xl text-p5 hover:text-p4 hover:bg-s5/50 transition-colors ml-auto flex-shrink-0"
               aria-label="Close dialog"
             >
-              <X size={18} />
+              <BreezeIcon name="X" size={18} />
             </button>
           )}
         </div>

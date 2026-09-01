@@ -87,7 +87,7 @@ const PanelLayout = () => {
         )
       }
     >
-      <BreezeIcon icon={Icon} size={18} className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110" />
+      <BreezeIcon icon={Icon} size={20} className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110" />
       <span>{label}</span>
     </NavLink>
   );
@@ -177,15 +177,15 @@ const PanelLayout = () => {
               )
             }
           >
-            <BreezeIcon icon={User} size={18} className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110" />
+            <BreezeIcon icon={User} size={20} className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110" />
             <span>Account Settings</span>
           </NavLink>
 
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-medium text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors w-full text-left"
+            className="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-medium text-p5 hover:text-red-400 hover:bg-red-500/10 transition-colors w-full text-left cursor-pointer"
           >
-            <BreezeIcon icon={LogOut} size={18} className="flex-shrink-0" />
+            <BreezeIcon icon={LogOut} size={20} className="flex-shrink-0" />
             <span>Sign Out</span>
           </button>
         </div>
@@ -222,10 +222,10 @@ const PanelLayout = () => {
                 e.stopPropagation();
                 setUserDropdown(!userDropdown);
               }}
-              className="flex items-center gap-3 p-1.5 pr-3 rounded-2xl hover:bg-s5/50 border border-transparent hover:border-s3 transition-all duration-300"
+              className="flex items-center gap-3 p-1.5 pr-3 rounded-2xl hover:bg-s5/50 border border-transparent hover:border-s3 transition-all duration-300 cursor-pointer"
             >
               <div className="size-8 rounded-xl bg-s1 border border-s3 flex items-center justify-center text-p1 font-bold text-xs uppercase overflow-hidden">
-                {user?.username ? user.username.charAt(0) : <BreezeIcon icon={Server} size={14} />}
+                {user?.username ? user.username.charAt(0) : <BreezeIcon icon={Server} size={16} />}
               </div>
               <div className="hidden sm:flex flex-col text-left">
                 <span className="text-xs font-semibold text-p4 leading-tight">{user?.username}</span>
@@ -241,15 +241,15 @@ const PanelLayout = () => {
                   to="/panel/account"
                   className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-p5 hover:text-p4 hover:bg-s5/50 transition-colors"
                 >
-                  <BreezeIcon icon={Settings} size={15} />
+                  <BreezeIcon icon={Settings} size={16} />
                   <span>Account Settings</span>
                 </Link>
                 <div className="my-1 border-t border-s3" />
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-red-400 hover:bg-red-500/10 transition-colors w-full text-left"
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-red-400 hover:bg-red-500/10 transition-colors w-full text-left cursor-pointer"
                 >
-                  <BreezeIcon icon={LogOut} size={15} />
+                  <BreezeIcon icon={LogOut} size={16} />
                   <span>Sign Out</span>
                 </button>
               </div>

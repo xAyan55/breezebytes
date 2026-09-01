@@ -262,9 +262,9 @@ const ServerList = () => {
                         title="Copy Server Address"
                       >
                         {copiedId === server.id ? (
-                          <BreezeIcon icon={Check} size={13} />
+                          <BreezeIcon icon={Check} size={14} className="text-emerald-400" />
                         ) : (
-                          <BreezeIcon icon={Copy} size={13} />
+                          <BreezeIcon icon={Copy} size={14} />
                         )}
                       </button>
                     )}
@@ -273,22 +273,22 @@ const ServerList = () => {
                   {/* Quick Specs Metrics */}
                   <div className="grid grid-cols-3 gap-2 text-center text-xs font-mono pt-1">
                     <div className="p-2 rounded-xl bg-s1/60 border border-s3/80">
-                      <span className="text-[9px] text-p5 uppercase font-sans font-semibold flex items-center justify-center gap-1">
-                        <BreezeIcon icon={HardDrive} size={10} />
+                      <span className="text-[9px] text-p5 uppercase font-sans font-semibold flex items-center justify-center gap-1.5">
+                        <BreezeIcon icon={HardDrive} size={14} />
                         <span>RAM</span>
                       </span>
                       <span className="text-p4 font-bold text-xs mt-0.5 block">{formatGb(server.memory)}</span>
                     </div>
                     <div className="p-2 rounded-xl bg-s1/60 border border-s3/80">
-                      <span className="text-[9px] text-p5 uppercase font-sans font-semibold flex items-center justify-center gap-1">
-                        <BreezeIcon icon={HardDrive} size={10} />
+                      <span className="text-[9px] text-p5 uppercase font-sans font-semibold flex items-center justify-center gap-1.5">
+                        <BreezeIcon icon={HardDrive} size={14} />
                         <span>Disk</span>
                       </span>
                       <span className="text-p4 font-bold text-xs mt-0.5 block">{formatGb(server.disk)}</span>
                     </div>
                     <div className="p-2 rounded-xl bg-s1/60 border border-s3/80">
-                      <span className="text-[9px] text-p5 uppercase font-sans font-semibold flex items-center justify-center gap-1">
-                        <BreezeIcon icon={Cpu} size={10} />
+                      <span className="text-[9px] text-p5 uppercase font-sans font-semibold flex items-center justify-center gap-1.5">
+                        <BreezeIcon icon={Cpu} size={14} />
                         <span>CPU</span>
                       </span>
                       <span className="text-p4 font-bold text-xs mt-0.5 block">{server.cpu || 100}%</span>
@@ -306,7 +306,7 @@ const ServerList = () => {
                     className="text-xs font-semibold text-p1 hover:underline flex items-center gap-1 group/link"
                   >
                     <span>Manage Server</span>
-                    <BreezeIcon icon={ArrowRight} size={13} className="group-hover/link:translate-x-0.5 transition-transform" />
+                    <BreezeIcon icon={ArrowRight} size={14} className="group-hover/link:translate-x-0.5 transition-transform" />
                   </Link>
                 </div>
               </BreezeCard>

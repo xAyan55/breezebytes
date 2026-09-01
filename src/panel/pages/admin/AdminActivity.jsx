@@ -4,7 +4,6 @@ import BreezeCard from '../../../components/ui/BreezeCard.jsx';
 import BreezePageHeader from '../../../components/ui/BreezePageHeader.jsx';
 import BreezeIcon from '../../../components/ui/BreezeIcon.jsx';
 import { BreezeSkeleton } from '../../../components/ui/BreezeSkeleton.jsx';
-import { Activity, Terminal } from 'lucide-react';
 
 const AdminActivity = () => {
   const [logs, setLogs] = useState([]);
@@ -34,7 +33,7 @@ const AdminActivity = () => {
         caption="Administration"
         title="System Audit Logs"
         description="Chronological record of administrative events, server creations, and daemon operations."
-        icon={Activity}
+        icon="Activity"
       />
 
       <BreezeCard className="overflow-hidden">
@@ -46,7 +45,7 @@ const AdminActivity = () => {
           </div>
         ) : logs.length === 0 ? (
           <div className="p-12 text-center text-p5 text-xs flex flex-col items-center justify-center gap-2">
-            <BreezeIcon icon={Terminal} size={28} className="text-p5/40 mb-1" />
+            <BreezeIcon icon="Terminal" size={28} className="text-p5/40 mb-1" />
             <p className="font-semibold text-p4">No audit logs recorded yet</p>
             <p className="text-[11px] text-p5/70">System audit records will appear here as administrative actions occur.</p>
           </div>
