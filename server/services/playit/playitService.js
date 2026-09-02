@@ -188,7 +188,25 @@ class PlayitService {
    */
   async ensureAgent(nodeId = 1) {
     const id = Number(nodeId) || 1;
-    const nodeConfig = playit_nodes.findOne({ node_id: id });
+    let nodeConfig = playit_nodes.findOne({ node_id: id });
+    if (!nodeConfig) {
+      nodeConfig = playit_nodes.insert({
+        node_id: id,
+        enabled: true,
+        auto_provision: true,
+        agent_id: null,
+        agent_version: '1.0.10',
+        secret_configured: false,
+        encrypted_secret: null,
+        playit_status: 'unconfigured',
+        install_path: null,
+        service_name: 'playit-agent.service',
+        last_health_check: null,
+        last_reconciled_at: null,
+        last_error: null,
+        last_error_code: null,
+      });
+    }
     const secretKey = this.getNodeSecretKey(id);
 
     if (!secretKey) {
