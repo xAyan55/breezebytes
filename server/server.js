@@ -3,6 +3,7 @@ import http from 'http';
 import cors from 'cors';
 import { runMigrations } from './db/migrations.js';
 import { schedulerWorker } from './daemon/schedulerWorker.js';
+import { processManager } from './daemon/processManager.js';
 import { setupWebSocketGateway } from './ws/gateway.js';
 
 import authRouter from './routes/auth.js';
@@ -80,3 +81,17 @@ const PORT = process.env.PORT || 3001;
 server.listen(PORT, '127.0.0.1', () => {
   console.log(`[BreezeBytes API] Control plane server listening on http://127.0.0.1:${PORT}`);
 });
+
+// 7. Graceful Shutdown
+const handleShutdown = (signal) => {
+  console.log(`[API] Received ${signal}. Shutting down cleanly...`);
+  try {
+    processManager.shutdownAll();
+  } catch (err) {
+    console.error('[API] Error during shutdown:', err);
+  }
+  process.exit(0);
+};
+
+process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+process.on('SIGINT', () => handleShutdown('SIGINT'));

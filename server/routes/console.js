@@ -22,7 +22,11 @@ router.post('/:id/command', authenticate, requireServerAccess('server.console'),
     processManager.sendCommand(req.server.id, command);
     return res.json({ success: true, message: 'Command sent to process.' });
   } catch (err) {
-    return res.status(400).json({ success: false, error: { code: 'COMMAND_FAILED', message: err.message } });
+    const realStatus = processManager.getStatus(req.server.id);
+    return res.status(400).json({
+      success: false,
+      error: { code: 'COMMAND_FAILED', message: err.message, status: realStatus }
+    });
   }
 });
 

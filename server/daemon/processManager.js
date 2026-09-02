@@ -21,7 +21,35 @@ class ProcessManager extends EventEmitter {
     super();
     this.processes = new Map(); // serverId -> { proc, logs: [], status: 'running'|..., crashCount: 0 }
     this.statsInterval = null;
+    this.reconcileServersOnStartup();
     this.startStatsPolling();
+  }
+
+  reconcileServersOnStartup() {
+    try {
+      const allServers = servers.find();
+      for (const s of allServers) {
+        if (s.status === 'running' || s.status === 'starting' || s.status === 'stopping') {
+          console.log(`[DAEMON] Reconciling server #${s.id} (${s.name}) status from '${s.status}' to 'offline'`);
+          servers.update(s.id, { status: 'offline' });
+        }
+      }
+    } catch (err) {
+      console.error('[DAEMON] Failed to reconcile server statuses:', err);
+    }
+  }
+
+  shutdownAll() {
+    for (const [id, item] of this.processes.entries()) {
+      if (item && item.proc) {
+        try {
+          item.proc.kill('SIGTERM');
+        } catch {
+          // ignore
+        }
+      }
+      servers.update(id, { status: 'offline' });
+    }
   }
 
   getServerDir(server) {
@@ -83,11 +111,16 @@ class ProcessManager extends EventEmitter {
   }
 
   getStatus(serverId) {
-    const item = this.processes.get(Number(serverId));
+    const id = Number(serverId);
+    const item = this.processes.get(id);
     if (item && item.proc && !item.proc.killed) {
       return item.status || 'running';
     }
-    const s = servers.findById(serverId);
+    const s = servers.findById(id);
+    if (s && (s.status === 'running' || s.status === 'starting' || s.status === 'stopping')) {
+      servers.update(id, { status: 'offline' });
+      return 'offline';
+    }
     return s ? s.status : 'offline';
   }
 

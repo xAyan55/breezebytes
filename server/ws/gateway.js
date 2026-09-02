@@ -140,7 +140,19 @@ export function setupWebSocketGateway(server) {
             const subuser = server_subusers.findOne({ server_id: serverId, user_id: ws.user.id });
 
             if (isOwnerOrAdmin || isServerOwner || (subuser && subuser.permissions.includes('server.console'))) {
-              processManager.sendCommand(serverId, command);
+              try {
+                processManager.sendCommand(serverId, command);
+              } catch (cmdErr) {
+                broadcastToChannel(`server:${serverId}:console`, 'console_line', {
+                  timestamp: new Date().toISOString(),
+                  text: `[BreezeBytes] Command failed: ${cmdErr.message}`
+                });
+                const realStatus = processManager.getStatus(serverId);
+                broadcastToChannel(`server:${serverId}:status`, 'status_change', {
+                  serverId,
+                  status: realStatus
+                });
+              }
             }
           }
         }
