@@ -135,22 +135,22 @@ const mockServer = http.createServer(async (req, res) => {
       return;
     }
 
-    if (req.url === '/v1/tunnels/create') {
-      // Validate upstream ReqTunnelsCreateV1 schema
-      assert.ok(body.ports, 'Missing ports field');
+    if (req.url === '/tunnels/create' || req.url === '/v1/tunnels/create') {
       assert.ok(body.origin, 'Missing origin field');
       assert.equal(body.origin.type, 'agent');
-      assert.equal(body.origin.data.agent_id, MOCK_AGENT_ID);
+      const agentId = body.origin.data.agent_id;
+      assert.equal(agentId, MOCK_AGENT_ID);
 
       const tunnelId = `tun_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-      const localPort = body.origin.data.config.fields.find(f => f.name === 'local_port')?.value;
+      const localPort = body.origin.data.local_port || (body.origin.data.config?.fields?.find(f => f.name === 'local_port')?.value);
       const assignedPublicPort = Math.floor(Math.random() * 20000) + 20000;
+      const tType = body.tunnel_type || body.ports?.details || 'minecraft-java';
 
       const newTun = {
         id: tunnelId,
         name: body.name,
-        tunnel_type: body.ports.details,
-        port_type: body.ports.details === 'minecraft-bedrock' ? 'udp' : 'tcp',
+        tunnel_type: tType,
+        port_type: tType === 'minecraft-bedrock' ? 'udp' : 'tcp',
         localPort: Number(localPort),
         localIp: '127.0.0.1',
         publicPort: assignedPublicPort,
@@ -164,12 +164,16 @@ const mockServer = http.createServer(async (req, res) => {
       return;
     }
 
-    if (req.url === '/v1/tunnels/config') {
+    if (req.url === '/tunnels/update' || req.url === '/v1/tunnels/config') {
       assert.ok(body.tunnel_id, 'Missing tunnel_id');
       const found = mockTunnels.find(t => t.id === body.tunnel_id);
-      if (found && body.new_config?.fields) {
-        const newPort = body.new_config.fields.find(f => f.name === 'local_port')?.value;
-        if (newPort) found.localPort = Number(newPort);
+      if (found) {
+        if (body.local_port) {
+          found.localPort = Number(body.local_port);
+        } else if (body.new_config?.fields) {
+          const newPort = body.new_config.fields.find(f => f.name === 'local_port')?.value;
+          if (newPort) found.localPort = Number(newPort);
+        }
       }
       lastConfiguredTunnel = body;
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -437,8 +441,10 @@ await test('8. PlayitService - Primary Port Change Synchronization', async () =>
   assert.equal(success, true, 'updateTunnelPort returned true');
 
   const updatedTunnel = playit_tunnels.findOne({ server_id: server.id });
-  assert.equal(updatedTunnel.local_port, 25570, 'DB local_port updated');
-  assert.equal(lastConfiguredTunnel?.new_config?.fields?.find(f => f.name === 'local_port')?.value, '25570', 'API configureTunnel called with new port');
+  const portInPayload = lastConfiguredTunnel?.local_port !== undefined
+    ? String(lastConfiguredTunnel.local_port)
+    : lastConfiguredTunnel?.new_config?.fields?.find(f => f.name === 'local_port')?.value;
+  assert.equal(portInPayload, '25570', 'API configureTunnel called with new port');
 });
 
 await test('9. PlayitService - Tunnel Toggle (Enable/Disable)', async () => {

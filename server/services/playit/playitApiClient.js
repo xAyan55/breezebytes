@@ -219,10 +219,12 @@ export class PlayitApiClientV1 {
   }
 
   /**
-   * POST /v1/tunnels/create
-   * Uses exact upstream ReqTunnelsCreateV1 schema:
-   * ports: { type: "tunnel-type", details: "minecraft-java" | "minecraft-bedrock" }
-   * origin: { type: "agent", data: { agent_id: Uuid, config: { fields: [ { name, value } ] } } }
+   * POST /tunnels/create
+   * Uses official ReqTunnelsCreate schema:
+   * tunnel_type: "minecraft-java" | "minecraft-bedrock"
+   * port_type: "tcp" | "udp" | "both"
+   * port_count: 1
+   * origin: { type: "agent", data: { agent_id, local_ip, local_port } }
    * @param {Object} params
    * @param {string} params.name - Tunnel name identifier
    * @param {'minecraft-java'|'minecraft-bedrock'} params.tunnelType
@@ -236,59 +238,54 @@ export class PlayitApiClientV1 {
     if (!agentId) throw new PlayitApiError('Agent ID is required to create a tunnel origin.', PLAYIT_ERROR_CODES.INVALID_TUNNEL_CONFIG, 400);
     if (!localPort || isNaN(Number(localPort))) throw new PlayitApiError('Valid localPort is required for tunnel creation.', PLAYIT_ERROR_CODES.INVALID_TUNNEL_CONFIG, 400);
 
+    const isBedrock = tunnelType === 'minecraft-bedrock';
     const payload = {
       name: name ? String(name).slice(0, 64) : null,
-      ports: {
-        type: 'tunnel-type',
-        details: tunnelType === 'minecraft-bedrock' ? 'minecraft-bedrock' : 'minecraft-java',
-      },
+      tunnel_type: isBedrock ? 'minecraft-bedrock' : 'minecraft-java',
+      port_type: isBedrock ? 'udp' : 'both',
+      port_count: 1,
       origin: {
         type: 'agent',
         data: {
           agent_id: agentId,
-          config: {
-            fields: [
-              { name: 'local_ip', value: String(localIp) },
-              { name: 'local_port', value: String(localPort) },
-            ],
-          },
+          local_ip: String(localIp),
+          local_port: Number(localPort),
         },
       },
       enabled: Boolean(enabled),
       alloc: null,
     };
 
-    const res = await this._post('/v1/tunnels/create', payload, true);
+    const res = await this._post('/tunnels/create', payload, true);
     if (!res || !res.id) {
-      throw new PlayitApiError('Playit /v1/tunnels/create succeeded but returned no tunnel ID.', PLAYIT_ERROR_CODES.UNKNOWN, 500);
+      throw new PlayitApiError('Playit /tunnels/create succeeded but returned no tunnel ID.', PLAYIT_ERROR_CODES.UNKNOWN, 500);
     }
     return res;
   }
 
   /**
-   * POST /v1/tunnels/config
+   * POST /tunnels/update
    * Updates tunnel local bind configuration.
    * @param {Object} params
    * @param {string} params.tunnelId - Playit tunnel UUID
    * @param {string} [params.localIp='127.0.0.1']
    * @param {number} params.localPort - New local server port
+   * @param {string} [params.agentId]
+   * @param {boolean} [params.enabled=true]
    */
-  async configureTunnel({ tunnelId, localIp = '127.0.0.1', localPort }) {
+  async configureTunnel({ tunnelId, localIp = '127.0.0.1', localPort, agentId = null, enabled = true }) {
     if (!tunnelId) throw new PlayitApiError('tunnelId is required to configure tunnel.', PLAYIT_ERROR_CODES.INVALID_TUNNEL_CONFIG, 400);
     if (!localPort || isNaN(Number(localPort))) throw new PlayitApiError('localPort is required to configure tunnel.', PLAYIT_ERROR_CODES.INVALID_TUNNEL_CONFIG, 400);
 
     const payload = {
       tunnel_id: tunnelId,
-      new_agent_id: null,
-      new_config: {
-        fields: [
-          { name: 'local_ip', value: String(localIp) },
-          { name: 'local_port', value: String(localPort) },
-        ],
-      },
+      local_ip: String(localIp),
+      local_port: Number(localPort),
+      agent_id: agentId || null,
+      enabled: Boolean(enabled),
     };
 
-    return await this._post('/v1/tunnels/config', payload, true);
+    return await this._post('/tunnels/update', payload, true);
   }
 
   /**
@@ -380,35 +377,51 @@ export class PlayitApiClientV1 {
     let publicIp = null;
 
     let domainAddress = null;
-    let autoAddress = null;
+    let autoAddressWithPort = null;
+    let autoAddressWithoutPort = null;
     let ipv4Address = null;
 
     for (const ca of connectAddrs) {
+      const addr = ca.value?.address;
       if (ca.type === 'domain' && ca.value) {
         domain = ca.value.domain || domain;
-        domainAddress = ca.value.address || domainAddress;
+        domainAddress = addr || domainAddress;
       } else if (ca.type === 'auto' && ca.value) {
-        autoAddress = ca.value.address || autoAddress;
+        if (addr && addr.includes(':')) {
+          autoAddressWithPort = addr;
+        } else {
+          autoAddressWithoutPort = addr;
+        }
       } else if (ca.type === 'addr4' && ca.value) {
-        ipv4Address = ca.value.address || ipv4Address;
-        if (ca.value.address && ca.value.address.includes(':')) {
-          publicIp = ca.value.address.split(':')[0];
+        ipv4Address = addr || ipv4Address;
+        if (addr && addr.includes(':')) {
+          publicIp = addr.split(':')[0];
         }
       }
     }
 
-    publicAddress = domainAddress || autoAddress || ipv4Address;
-
-    // 2. Check public_allocations for port
+    // 2. Check public_allocations for port and hostname
     if (tunnel.public_allocations && tunnel.public_allocations.length > 0) {
-      const alloc = tunnel.public_allocations[0];
-      if (alloc.port) {
-        publicPort = alloc.port.from || alloc.port;
-      }
-      if (alloc.ip4 && !publicIp) {
-        publicIp = alloc.ip4;
+      for (const allocItem of tunnel.public_allocations) {
+        const alloc = allocItem.details || allocItem;
+        if (alloc.port && !publicPort) {
+          publicPort = typeof alloc.port === 'object' ? (alloc.port.from || alloc.port.to) : alloc.port;
+        }
+        if (alloc.ip && !publicIp) {
+          publicIp = alloc.ip;
+        } else if (alloc.ip4 && !publicIp) {
+          publicIp = alloc.ip4;
+        }
+        if (alloc.auto_domain && !domain) {
+          domain = alloc.auto_domain;
+        }
+        if (alloc.ip_hostname && alloc.port && !autoAddressWithPort) {
+          autoAddressWithPort = `${alloc.ip_hostname}:${alloc.port}`;
+        }
       }
     }
+
+    publicAddress = autoAddressWithPort || domainAddress || autoAddressWithoutPort || ipv4Address;
 
     // 3. Fallback to display_address if present
     if (!publicAddress && tunnel.display_address) {
