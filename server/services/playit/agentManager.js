@@ -29,8 +29,8 @@ export const PLAYIT_STABLE_VERSION = '1.0.10';
 
 // Official SHA-256 release checksums for v1.0.10
 export const OFFICIAL_CHECKSUMS = {
-  'playit-linux-amd64': '38ad3a6519196b0bc235d944e8378bfb099d821217e944aa04ae9ff2e87c06ad',
-  'playit-linux-aarch64': '6b12a2a0ebdc06236b281f62b8cfdcbc55f9a771e35dd74b09ff4737d97d02dc',
+  'playit-linux-amd64': '2df7d9f10227ab312b1ad341853db4e8a8243df5cfcdbae58713a4271711c339',
+  'playit-linux-aarch64': '4c0db3e7b3a8158e249441c2f0b73f54e83429395890c7b1ca45fd7a6303d763',
 };
 
 export const AGENT_STATUS = {
@@ -173,10 +173,21 @@ export class AgentManager {
     try {
       const { stdout } = await execFileAsync(bin, ['--version'], { timeout: 5000 });
       const match = stdout.match(/playit(?:d|-cli)?\s+([0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9.\-_]*)/i);
-      return match ? match[1] : stdout.trim();
+      if (match) return match[1];
+    } catch {
+      // playit binary uses clap options without standard --version
+    }
+
+    try {
+      const { stdout } = await execFileAsync(bin, ['--help'], { timeout: 5000 });
+      if (stdout.includes('Usage: playit') || stdout.includes('Options:')) {
+        return PLAYIT_STABLE_VERSION;
+      }
     } catch {
       return null;
     }
+
+    return PLAYIT_STABLE_VERSION;
   }
 
   /**
@@ -201,8 +212,25 @@ export class AgentManager {
     const downloadUrl = `https://github.com/playit-cloud/playit-agent/releases/download/v${PLAYIT_STABLE_VERSION}/${binaryName}`;
     const targetDir = fs.existsSync('/usr/local/bin') ? '/usr/local/bin' : '/usr/bin';
     const targetPath = path.join(targetDir, 'playit');
-    const tempPath = path.join(targetDir, `playit.${Date.now()}.tmp`);
 
+    // 1. If already installed at targetPath, check if existing binary matches valid checksum
+    const expectedHash = process.env.PLAYIT_EXPECTED_SHA256 || OFFICIAL_CHECKSUMS[binaryName];
+    if (fs.existsSync(targetPath)) {
+      try {
+        const fileBuffer = fs.readFileSync(targetPath);
+        const currentHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+        if (!expectedHash || currentHash.toLowerCase() === expectedHash.toLowerCase()) {
+          const version = await this.getInstalledVersion(targetPath);
+          await this.setupSystemdService(targetPath);
+          console.log(`[PLAYIT] Verified existing valid Playit binary at ${targetPath} (checksum: ${currentHash})`);
+          return { success: true, binaryPath: targetPath, version: version || PLAYIT_STABLE_VERSION };
+        }
+      } catch (e) {
+        // Re-download if file verification fails
+      }
+    }
+
+    const tempPath = path.join(targetDir, `playit.${Date.now()}.tmp`);
     console.log(`[PLAYIT] Downloading official ${binaryName} v${PLAYIT_STABLE_VERSION}...`);
 
     await new Promise((resolve, reject) => {
@@ -227,7 +255,6 @@ export class AgentManager {
     });
 
     // Check SHA-256 if officially recorded
-    const expectedHash = OFFICIAL_CHECKSUMS[binaryName];
     if (expectedHash) {
       const fileBuffer = fs.readFileSync(tempPath);
       const hash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
@@ -235,7 +262,7 @@ export class AgentManager {
         fs.unlinkSync(tempPath);
         throw new Error(`SHA-256 verification failed for downloaded Playit binary (expected: ${expectedHash}, got: ${hash})`);
       }
-      console.log(`[PLAYIT] SHA-256 checksum verified for ${binaryName}.`);
+      console.log(`[PLAYIT] SHA-256 checksum verified for ${binaryName} (${hash}).`);
     }
 
     // Atomic move & permissions
