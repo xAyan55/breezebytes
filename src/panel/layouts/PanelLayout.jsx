@@ -72,6 +72,7 @@ const PanelLayout = () => {
     { to: '/panel/admin/nodes', icon: HardDrive, label: 'Nodes' },
     { to: '/panel/admin/allocations', icon: Network, label: 'Allocations' },
     { to: '/panel/admin/activity', icon: Activity, label: 'Activity Log' },
+    { to: '/panel/admin/settings', icon: Settings, label: 'Settings' },
   ];
 
   const NavItem = ({ to, icon: Icon, label, end }) => (

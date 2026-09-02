@@ -20,12 +20,14 @@ const ArrowLeftIcon = () => (
 );
 
 const AuthPage = ({ mode = "login" }) => {
-  const isLogin = mode === "login";
-
   useEffect(() => {
-    document.title = isLogin
-      ? "Sign In — BreezeBytes"
-      : "Create Account — BreezeBytes";
+    let title = "Sign In — BreezeBytes";
+    if (mode === "register") title = "Create Account — BreezeBytes";
+    if (mode === "forgot-password") title = "Forgot Password — BreezeBytes";
+    if (mode === "reset-password") title = "Reset Password — BreezeBytes";
+    if (mode === "verify-email") title = "Verify Account — BreezeBytes";
+
+    document.title = title;
     window.scrollTo(0, 0);
 
     let robotsMeta = document.querySelector('meta[name="robots"]');
@@ -41,7 +43,7 @@ const AuthPage = ({ mode = "login" }) => {
         robotsMeta.setAttribute("content", "index,follow");
       }
     };
-  }, [isLogin]);
+  }, [mode]);
 
   return (
     <div className="min-h-screen w-full bg-s1 flex flex-col lg:flex-row overflow-x-hidden">
@@ -65,12 +67,21 @@ const AuthPage = ({ mode = "login" }) => {
           </Link>
 
           {/* Quick link to alternate mode */}
-          <Link
-            to={isLogin ? "/register" : "/login"}
-            className="text-xs font-semibold text-p1 hover:underline tracking-wide max-sm:hidden"
-          >
-            {isLogin ? "Need an account?" : "Already registered?"}
-          </Link>
+          {mode === "login" && (
+            <Link to="/register" className="text-xs font-semibold text-p1 hover:underline tracking-wide max-sm:hidden">
+              Need an account?
+            </Link>
+          )}
+          {mode === "register" && (
+            <Link to="/login" className="text-xs font-semibold text-p1 hover:underline tracking-wide max-sm:hidden">
+              Already registered?
+            </Link>
+          )}
+          {(mode === "forgot-password" || mode === "reset-password" || mode === "verify-email") && (
+            <Link to="/login" className="text-xs font-semibold text-p1 hover:underline tracking-wide max-sm:hidden">
+              Back to Sign In
+            </Link>
+          )}
         </div>
 
         {/* Centered Form Workspace */}

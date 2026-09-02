@@ -177,5 +177,8 @@ export const api_keys = dbStore.table('api_keys');
 export const activity_logs = dbStore.table('activity_logs');
 export const audit_logs = dbStore.table('audit_logs');
 export const notifications = dbStore.table('notifications');
+export const settings = dbStore.table('settings');
+export const verification_tokens = dbStore.table('verification_tokens');
+export const password_resets = dbStore.table('password_resets');
 
 export default dbStore;

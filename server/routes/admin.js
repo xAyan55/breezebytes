@@ -5,6 +5,8 @@ import { requireRole } from '../middleware/rbac.js';
 import { users, nodes, allocations, servers, audit_logs } from '../db/database.js';
 import { processManager } from '../daemon/processManager.js';
 import { FREE_PLAN } from '../config/plans.js';
+import emailService from '../services/emailService.js';
+import { smtpTestLimiter } from '../middleware/rateLimiters.js';
 
 const router = Router();
 router.use(authenticate);
@@ -255,6 +257,107 @@ router.post('/servers/:id/unsuspend', (req, res) => {
   processManager.emit('status', { serverId: server.id, status: 'offline' });
 
   return res.json({ success: true, message: 'Server unsuspended.' });
+});
+
+// GET /api/v1/admin/settings/smtp - Read safe SMTP configuration
+router.get('/settings/smtp', (req, res) => {
+  const status = emailService.getPublicSmtpStatus();
+  return res.json({ success: true, data: status });
+});
+
+// POST /api/v1/admin/settings/smtp - Save SMTP configuration
+router.post('/settings/smtp', (req, res) => {
+  const {
+    enabled,
+    host,
+    port,
+    security,
+    username,
+    password,
+    fromEmail,
+    fromName,
+    replyTo,
+  } = req.body;
+
+  if (port && (isNaN(Number(port)) || Number(port) < 1 || Number(port) > 65535)) {
+    return res.status(400).json({
+      success: false,
+      error: { code: 'INVALID_PORT', message: 'Port must be an integer between 1 and 65535.' },
+    });
+  }
+
+  if (security && !['ssl', 'starttls', 'none'].includes(security)) {
+    return res.status(400).json({
+      success: false,
+      error: { code: 'INVALID_SECURITY', message: 'Security must be ssl, starttls, or none.' },
+    });
+  }
+
+  const updatedStatus = emailService.saveSmtpConfig({
+    enabled,
+    host,
+    port,
+    security,
+    username,
+    password,
+    fromEmail,
+    fromName,
+    replyTo,
+  });
+
+  audit_logs.insert({
+    user_id: req.user.id,
+    action: 'admin.settings.smtp.update',
+    details: JSON.stringify({
+      enabled: updatedStatus.enabled,
+      host: updatedStatus.host,
+      port: updatedStatus.port,
+      security: updatedStatus.security,
+      username: updatedStatus.username,
+      fromEmail: updatedStatus.fromEmail,
+    }),
+  });
+
+  return res.json({
+    success: true,
+    data: updatedStatus,
+    message: 'SMTP settings updated successfully.',
+  });
+});
+
+// POST /api/v1/admin/settings/smtp/test - Test connection and send test email
+router.post('/settings/smtp/test', smtpTestLimiter, async (req, res) => {
+  const destinationEmail = (req.body.destinationEmail || req.user.email || '').trim();
+
+  if (!destinationEmail || !destinationEmail.includes('@')) {
+    return res.status(400).json({
+      success: false,
+      error: { code: 'INVALID_DESTINATION_EMAIL', message: 'A valid destination email is required.' },
+    });
+  }
+
+  try {
+    const result = await emailService.sendTestEmail(destinationEmail);
+
+    audit_logs.insert({
+      user_id: req.user.id,
+      action: 'admin.settings.smtp.test',
+      details: JSON.stringify({ recipient: destinationEmail, messageId: result.messageId }),
+    });
+
+    return res.json({
+      success: true,
+      message: `Test email sent successfully to ${destinationEmail}.`,
+    });
+  } catch (err) {
+    return res.status(err.status || 400).json({
+      success: false,
+      error: {
+        code: err.code || 'SMTP_TEST_FAILED',
+        message: err.message,
+      },
+    });
+  }
 });
 
 // GET /api/v1/admin/audit-logs

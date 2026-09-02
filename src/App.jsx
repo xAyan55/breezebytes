@@ -33,6 +33,7 @@ import AdminUsers from "./panel/pages/admin/AdminUsers.jsx";
 import AdminNodes from "./panel/pages/admin/AdminNodes.jsx";
 import AdminAllocations from "./panel/pages/admin/AdminAllocations.jsx";
 import AdminActivity from "./panel/pages/admin/AdminActivity.jsx";
+import AdminSettings from "./panel/pages/admin/AdminSettings.jsx";
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -68,6 +69,9 @@ const App = () => {
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<AuthPage mode="login" />} />
             <Route path="/register" element={<AuthPage mode="register" />} />
+            <Route path="/forgot-password" element={<AuthPage mode="forgot-password" />} />
+            <Route path="/reset-password" element={<AuthPage mode="reset-password" />} />
+            <Route path="/verify-email" element={<AuthPage mode="verify-email" />} />
 
             {/* Protected Panel Routes (Global Navigation Context) */}
             <Route
@@ -122,6 +126,14 @@ const App = () => {
                 element={
                   <AdminRoute>
                     <AdminActivity />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="admin/settings"
+                element={
+                  <AdminRoute>
+                    <AdminSettings />
                   </AdminRoute>
                 }
               />

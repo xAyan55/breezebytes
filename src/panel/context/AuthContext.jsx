@@ -42,17 +42,36 @@ export const AuthProvider = ({ children }) => {
       setUser(res.data.user);
       return res.data.user;
     }
+    if (res.error?.requireVerification) {
+      const err = new Error(res.error.message || 'Please verify your email address.');
+      err.requireVerification = true;
+      err.email = res.error.email || email;
+      throw err;
+    }
     throw new Error(res.error?.message || 'Login failed');
   };
 
   const register = async (email, username, password) => {
     const res = await api.post('/auth/register', { email, username, password });
+    if (res.requireVerification) {
+      return { requireVerification: true, email: res.email || email };
+    }
     if (res.success && res.data?.token) {
       api.setToken(res.data.token);
       setUser(res.data.user);
       return res.data.user;
     }
     throw new Error(res.error?.message || 'Registration failed');
+  };
+
+  const verifyEmail = async (email, code) => {
+    const res = await api.post('/auth/verify-email', { email, code });
+    if (res.success && res.data?.token) {
+      api.setToken(res.data.token);
+      setUser(res.data.user);
+      return res.data.user;
+    }
+    throw new Error(res.error?.message || 'Verification failed');
   };
 
   const logout = () => {
@@ -68,11 +87,11 @@ export const AuthProvider = ({ children }) => {
         loading,
         login,
         register,
-        logout,
-        isAuthenticated: !!user,
-        isAdmin: user?.role === 'admin' || user?.role === 'owner',
-        isOwner: user?.role === 'owner',
+        verifyEmail,
         refetchUser: fetchCurrentUser,
+        isAdmin: user?.role === 'admin' || user?.role === 'owner',
+        isAuthenticated: !!user,
+        logout,
       }}
     >
       {children}
