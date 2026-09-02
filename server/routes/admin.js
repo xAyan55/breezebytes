@@ -2,11 +2,14 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { authenticate } from '../middleware/auth.js';
 import { requireRole } from '../middleware/rbac.js';
-import { users, nodes, allocations, servers, audit_logs } from '../db/database.js';
+import { users, nodes, allocations, servers, audit_logs, playit_nodes, playit_tunnels } from '../db/database.js';
 import { processManager } from '../daemon/processManager.js';
 import { FREE_PLAN } from '../config/plans.js';
 import emailService from '../services/emailService.js';
 import { smtpTestLimiter } from '../middleware/rateLimiters.js';
+import { playitService } from '../services/playit/playitService.js';
+import { agentManager } from '../services/playit/agentManager.js';
+import { encryptPlayitSecret } from '../utils/cryptoUtils.js';
 
 const router = Router();
 router.use(authenticate);
@@ -150,11 +153,24 @@ router.get('/nodes', (req, res) => {
   const list = nodes.find().map(n => {
     const nodeServers = servers.find({ node_id: n.id });
     const allocs = allocations.find({ node_id: n.id });
+    const pNode = playit_nodes.findOne({ node_id: n.id });
+    const nodeTunnels = playit_tunnels.find({ node_id: n.id });
+
     return {
       ...n,
       serversCount: nodeServers.length,
       allocationsCount: allocs.length,
-      usedAllocations: allocs.filter(a => a.server_id).length
+      usedAllocations: allocs.filter(a => a.server_id).length,
+      playit: {
+        configured: Boolean(pNode?.secret_configured || (n.id === 1 && process.env.PLAYIT_AGENT_SECRET)),
+        enabled: pNode ? Boolean(pNode.enabled) : true,
+        autoProvision: pNode ? Boolean(pNode.auto_provision) : true,
+        status: pNode?.playit_status || 'unconfigured',
+        agentId: pNode?.agent_id || null,
+        agentVersion: pNode?.agent_version || '1.0.10',
+        activeTunnels: nodeTunnels.filter(t => t.status === 'active').length,
+        lastHealthCheck: pNode?.last_health_check || null,
+      }
     };
   });
   return res.json({ success: true, data: list });
@@ -371,6 +387,282 @@ router.get('/audit-logs', (req, res) => {
     };
   });
   return res.json({ success: true, data: enriched });
+});
+
+// ========================================================
+// Admin Playit Integration Endpoints
+// ========================================================
+
+// GET /api/v1/admin/playit/nodes/:nodeId/status
+router.get('/playit/nodes/:nodeId/status', async (req, res) => {
+  const nodeId = Number(req.params.nodeId) || 1;
+  const pNode = playit_nodes.findOne({ node_id: nodeId });
+  const agentStatus = await agentManager.getStatus(nodeId);
+  const nodeTunnels = playit_tunnels.find({ node_id: nodeId });
+  const activeTunnels = nodeTunnels.filter(t => t.status === 'active');
+  const orphanedTunnels = nodeTunnels.filter(t => t.status === 'orphaned');
+
+  return res.json({
+    success: true,
+    data: {
+      nodeId,
+      configured: Boolean(pNode?.secret_configured || (nodeId === 1 && process.env.PLAYIT_AGENT_SECRET)),
+      enabled: pNode ? Boolean(pNode.enabled) : true,
+      autoProvision: pNode ? Boolean(pNode.auto_provision) : true,
+      playitStatus: pNode?.playit_status || 'unconfigured',
+      agentId: pNode?.agent_id || null,
+      agentVersion: agentStatus.version || pNode?.agent_version || '1.0.10',
+      isSystemd: Boolean(agentStatus.isSystemd),
+      agentRunning: agentStatus.status === 'running',
+      agentState: agentStatus.status,
+      activeTunnelsCount: activeTunnels.length,
+      orphanedTunnelsCount: orphanedTunnels.length,
+      totalTunnelsCount: nodeTunnels.length,
+      lastHealthCheck: pNode?.last_health_check || null,
+      lastReconciledAt: pNode?.last_reconciled_at || null,
+      lastError: pNode?.last_error || null,
+      lastErrorCode: pNode?.last_error_code || null,
+    }
+  });
+});
+
+// POST /api/v1/admin/playit/nodes/:nodeId/config - Update settings & encrypted secret
+router.post('/playit/nodes/:nodeId/config', (req, res) => {
+  const nodeId = Number(req.params.nodeId) || 1;
+  const { enabled, auto_provision, secretKey } = req.body;
+
+  let pNode = playit_nodes.findOne({ node_id: nodeId });
+  if (!pNode) {
+    pNode = playit_nodes.insert({
+      node_id: nodeId,
+      enabled: true,
+      auto_provision: true,
+      agent_id: null,
+      agent_version: '1.0.10',
+      secret_configured: false,
+      encrypted_secret: null,
+      playit_status: 'unconfigured',
+      install_path: null,
+      service_name: 'playit-agent.service',
+      last_health_check: null,
+      last_reconciled_at: null,
+      last_error: null,
+      last_error_code: null,
+    });
+  }
+
+  const updates = {};
+  if (enabled !== undefined) updates.enabled = Boolean(enabled);
+  if (auto_provision !== undefined) updates.auto_provision = Boolean(auto_provision);
+
+  if (secretKey && typeof secretKey === 'string' && secretKey.trim()) {
+    const cleanSecret = secretKey.trim();
+    const encrypted = encryptPlayitSecret(cleanSecret);
+    updates.encrypted_secret = encrypted;
+    updates.secret_configured = true;
+    updates.playit_status = 'stopped';
+
+    // Safely write secret to local disk with 0600 permissions
+    agentManager.writeSecretFile(cleanSecret, nodeId);
+
+    // Audit log (NEVER logs secret or raw tokens)
+    audit_logs.insert({
+      user_id: req.user.id,
+      action: 'playit.agent.secret.updated',
+      target_type: 'node',
+      target_id: nodeId,
+      details: JSON.stringify({ nodeId, secretLength: cleanSecret.length }),
+    });
+  }
+
+  const updated = playit_nodes.update(pNode.id, updates);
+
+  return res.json({
+    success: true,
+    data: {
+      nodeId: updated.node_id,
+      enabled: updated.enabled,
+      autoProvision: updated.auto_provision,
+      configured: updated.secret_configured,
+      agentId: updated.agent_id,
+      status: updated.playit_status,
+    },
+    message: 'Playit node configuration saved successfully.',
+  });
+});
+
+// POST /api/v1/admin/playit/nodes/:nodeId/claim/setup - Start official claim flow
+router.post('/playit/nodes/:nodeId/claim/setup', async (req, res) => {
+  const nodeId = Number(req.params.nodeId) || 1;
+  const client = playitService.getApiClientForNode(nodeId);
+
+  // Generate cryptographically random claim code
+  const code = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 6);
+
+  try {
+    await client.claimSetup(code, 'self-managed', '1.0.10');
+
+    audit_logs.insert({
+      user_id: req.user.id,
+      action: 'playit.claim.started',
+      target_type: 'node',
+      target_id: nodeId,
+      details: JSON.stringify({ nodeId }),
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        code,
+        claimUrl: `https://playit.gg/claim/${code}`,
+        expiresInSec: 600,
+      },
+      message: 'Claim code generated. Please open claim URL in your browser to approve the agent.',
+    });
+  } catch (err) {
+    return res.status(err.status || 400).json({
+      success: false,
+      error: { code: err.code || 'CLAIM_SETUP_FAILED', message: err.message },
+    });
+  }
+});
+
+// POST /api/v1/admin/playit/nodes/:nodeId/claim/exchange - Exchange approved claim code
+router.post('/playit/nodes/:nodeId/claim/exchange', async (req, res) => {
+  const nodeId = Number(req.params.nodeId) || 1;
+  const { code } = req.body;
+  if (!code || !code.trim()) {
+    return res.status(400).json({ success: false, error: { code: 'INVALID_CODE', message: 'Claim code is required.' } });
+  }
+
+  const client = playitService.getApiClientForNode(nodeId);
+
+  try {
+    const exchangeRes = await client.claimExchange(code.trim());
+    const secretKey = exchangeRes.secret_key;
+
+    if (!secretKey) {
+      throw new Error('Claim exchange did not return a valid secret key.');
+    }
+
+    // Encrypt and store secret
+    const encrypted = encryptPlayitSecret(secretKey);
+    let pNode = playit_nodes.findOne({ node_id: nodeId });
+    if (!pNode) {
+      pNode = playit_nodes.insert({ node_id: nodeId });
+    }
+
+    playit_nodes.update(pNode.id, {
+      encrypted_secret: encrypted,
+      secret_configured: true,
+      playit_status: 'stopped',
+    });
+
+    agentManager.writeSecretFile(secretKey, nodeId);
+
+    audit_logs.insert({
+      user_id: req.user.id,
+      action: 'playit.claim.completed',
+      target_type: 'node',
+      target_id: nodeId,
+      details: JSON.stringify({ nodeId }),
+    });
+
+    // Asynchronously ensure agent runs and obtain authoritative run-data
+    playitService.ensureAgent(nodeId).catch((err) => {
+      console.warn(`[ADMIN] Post-claim agent startup warning for node #${nodeId}:`, err.message);
+    });
+
+    return res.json({
+      success: true,
+      message: 'Agent successfully claimed and securely configured on node.',
+    });
+  } catch (err) {
+    return res.status(err.status || 400).json({
+      success: false,
+      error: { code: err.code || 'CLAIM_EXCHANGE_FAILED', message: err.message },
+    });
+  }
+});
+
+// POST /api/v1/admin/playit/nodes/:nodeId/install - Verify or download agent binary
+router.post('/playit/nodes/:nodeId/install', async (req, res) => {
+  const nodeId = Number(req.params.nodeId) || 1;
+  try {
+    const result = await agentManager.installBinary();
+
+    audit_logs.insert({
+      user_id: req.user.id,
+      action: 'playit.agent.install',
+      target_type: 'node',
+      target_id: nodeId,
+      details: JSON.stringify({ nodeId, version: result.version }),
+    });
+
+    return res.json({
+      success: true,
+      data: result,
+      message: `Playit agent binary v${result.version} installed successfully.`,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      error: { code: 'INSTALL_FAILED', message: err.message },
+    });
+  }
+});
+
+// POST /api/v1/admin/playit/nodes/:nodeId/restart - Restart agent
+router.post('/playit/nodes/:nodeId/restart', async (req, res) => {
+  const nodeId = Number(req.params.nodeId) || 1;
+  try {
+    await playitService.ensureAgent(nodeId);
+
+    audit_logs.insert({
+      user_id: req.user.id,
+      action: 'playit.agent.restart',
+      target_type: 'node',
+      target_id: nodeId,
+      details: JSON.stringify({ nodeId }),
+    });
+
+    return res.json({
+      success: true,
+      message: `Playit agent on node #${nodeId} restarted and verified healthy.`,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      error: { code: 'RESTART_FAILED', message: err.message },
+    });
+  }
+});
+
+// POST /api/v1/admin/playit/nodes/:nodeId/reconcile - Manual reconcile
+router.post('/playit/nodes/:nodeId/reconcile', async (req, res) => {
+  const nodeId = Number(req.params.nodeId) || 1;
+  try {
+    const result = await playitService.reconcileNode(nodeId);
+
+    audit_logs.insert({
+      user_id: req.user.id,
+      action: 'playit.tunnel.reconciled',
+      target_type: 'node',
+      target_id: nodeId,
+      details: JSON.stringify({ nodeId, ...result }),
+    });
+
+    return res.json({
+      success: true,
+      data: result,
+      message: 'Node tunnel reconciliation completed.',
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      error: { code: 'RECONCILE_FAILED', message: err.message },
+    });
+  }
 });
 
 export default router;

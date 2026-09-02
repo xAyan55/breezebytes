@@ -129,10 +129,10 @@ const ServerLayout = () => {
   };
 
   const copyAddress = () => {
-    const addr =
-      server?.allocation
-        ? `${server.allocation.ip === '0.0.0.0' ? server.node?.fqdn || 'localhost' : server.allocation.ip}:${server.allocation.port}`
-        : '';
+    const playitAddr = server?.playit?.status === 'active' && server?.playit?.publicAddress ? server.playit.publicAddress : null;
+    const addr = playitAddr || (server?.allocation
+      ? `${server.allocation.ip === '0.0.0.0' ? server.node?.fqdn || 'localhost' : server.allocation.ip}:${server.allocation.port}`
+      : '');
     if (addr) {
       navigator.clipboard.writeText(addr);
       setCopied(true);
@@ -162,9 +162,15 @@ const ServerLayout = () => {
     { to: `/panel/servers/${effectiveId}/settings`, icon: Settings, label: 'Settings' },
   ];
 
-  const serverAddress = server?.allocation
-    ? `${server.allocation.ip === '0.0.0.0' ? server.node?.fqdn || 'localhost' : server.allocation.ip}:${server.allocation.port}`
-    : 'Unassigned';
+  const playitTunnel = server?.playit;
+  const hasActivePlayit = playitTunnel && playitTunnel.status === 'active' && playitTunnel.publicAddress;
+  const isPlayitPending = playitTunnel && (playitTunnel.status === 'pending' || playitTunnel.status === 'creating' || playitTunnel.status === 'waiting_allocation' || playitTunnel.status === 'ensuring_agent');
+
+  const serverAddress = hasActivePlayit
+    ? playitTunnel.publicAddress
+    : (server?.allocation
+      ? `${server.allocation.ip === '0.0.0.0' ? server.node?.fqdn || 'localhost' : server.allocation.ip}:${server.allocation.port}`
+      : 'Unassigned');
 
   const isOnline = status === 'running';
   const isStarting = status === 'starting';
@@ -400,9 +406,9 @@ const ServerLayout = () => {
                       {server.software || 'Paper'} {server.minecraft_version || ''}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <p className="text-xs text-p4/90 font-mono tracking-wide truncate drop-shadow">{serverAddress}</p>
-                    {server?.allocation && (
+                    {(server?.allocation || hasActivePlayit) && (
                       <button
                         onClick={copyAddress}
                         className="p-1 rounded-lg text-p4 hover:text-p1 bg-s1/40 backdrop-blur-sm border border-s3/40 transition-colors duration-300 cursor-pointer"
@@ -414,6 +420,16 @@ const ServerLayout = () => {
                           <BreezeIcon icon={Copy} size={13} />
                         )}
                       </button>
+                    )}
+                    {hasActivePlayit && (
+                      <span className="px-2 py-0.5 rounded-full bg-p1/20 text-p1 border border-p1/30 text-[9px] font-bold uppercase tracking-wider">
+                        Playit Public
+                      </span>
+                    )}
+                    {isPlayitPending && (
+                      <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-bold tracking-wider animate-pulse">
+                        Allocating Playit...
+                      </span>
                     )}
                   </div>
                 </div>

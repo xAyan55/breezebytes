@@ -145,7 +145,7 @@ class DatabaseStore {
 
   save() {
     try {
-      const tempPath = DB_FILE + '.tmp';
+      const tempPath = `${DB_FILE}.${process.pid}.${Date.now()}.${Math.random().toString(36).substring(2, 8)}.tmp`;
       fs.writeFileSync(tempPath, JSON.stringify(this.state, null, 2), 'utf-8');
       fs.renameSync(tempPath, DB_FILE);
     } catch (err) {
@@ -180,5 +180,7 @@ export const notifications = dbStore.table('notifications');
 export const settings = dbStore.table('settings');
 export const verification_tokens = dbStore.table('verification_tokens');
 export const password_resets = dbStore.table('password_resets');
+export const playit_tunnels = dbStore.table('playit_tunnels');
+export const playit_nodes = dbStore.table('playit_nodes');
 
 export default dbStore;

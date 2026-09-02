@@ -5,6 +5,7 @@ import { runMigrations } from './db/migrations.js';
 import { schedulerWorker } from './daemon/schedulerWorker.js';
 import { processManager } from './daemon/processManager.js';
 import { setupWebSocketGateway } from './ws/gateway.js';
+import { playitService } from './services/playit/playitService.js';
 
 import authRouter from './routes/auth.js';
 import serversRouter from './routes/servers.js';
@@ -24,8 +25,9 @@ import adminRouter from './routes/admin.js';
 // 1. Run migrations and seed data
 runMigrations();
 
-// 2. Initialize background scheduler
+// 2. Initialize background scheduler & Playit control plane
 schedulerWorker.init();
+playitService.init();
 
 const app = express();
 const server = http.createServer(app);
@@ -86,6 +88,7 @@ server.listen(PORT, '127.0.0.1', () => {
 const handleShutdown = (signal) => {
   console.log(`[API] Received ${signal}. Shutting down cleanly...`);
   try {
+    playitService.shutdown();
     processManager.shutdownAll();
   } catch (err) {
     console.error('[API] Error during shutdown:', err);

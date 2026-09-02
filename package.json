@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node tests/entitlements.test.mjs && node tests/smtp_auth.test.mjs",
+    "test": "node tests/entitlements.test.mjs && node tests/smtp_auth.test.mjs && node tests/playit.test.mjs",
     "start": "node server/server.js",
     "server": "node server/server.js",
     "deploy:vps": "node scripts/deploy_to_vps.mjs"

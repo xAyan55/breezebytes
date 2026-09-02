@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { users, nodes, allocations, settings } from './database.js';
+import { users, nodes, allocations, settings, playit_nodes } from './database.js';
 import { FREE_PLAN } from '../config/plans.js';
 
 export function runMigrations() {
@@ -91,6 +91,45 @@ export function runMigrations() {
         replyTo: '',
       },
     });
+  }
+
+  // 5. Seed default Playit settings if not present
+  const playitSetting = settings.findOne({ key: 'playit' });
+  if (!playitSetting) {
+    settings.insert({
+      key: 'playit',
+      value: {
+        enabled: true,
+        auto_provision: true,
+        secret_configured: false,
+        last_health_check: null,
+        last_reconciled_at: null,
+      },
+    });
+  }
+
+  // 6. Ensure existing nodes have a playit_nodes configuration record
+  const allNodes = nodes.find();
+  for (const n of allNodes) {
+    const existingNode = playit_nodes.findOne({ node_id: n.id });
+    if (!existingNode) {
+      playit_nodes.insert({
+        node_id: n.id,
+        enabled: true,
+        auto_provision: true,
+        agent_id: null,
+        agent_version: '1.0.10',
+        secret_configured: false,
+        encrypted_secret: null,
+        playit_status: 'unconfigured',
+        install_path: null,
+        service_name: 'playit-agent.service',
+        last_health_check: null,
+        last_reconciled_at: null,
+        last_error: null,
+        last_error_code: null,
+      });
+    }
   }
 
   console.log('[DB] Database ready.');

@@ -43,13 +43,50 @@ async function deploy() {
         `cd ${TARGET_DIR} && git fetch origin main && git reset --hard origin/main && git clean -fd`
       );
 
-      // 2. Install dependencies & build frontend bundle
+      // 2. Ensure official Playit stable binary and systemd service exist on Ubuntu host
+      await runRemoteCommand(
+        conn,
+        `if [ ! -f /usr/local/bin/playit ]; then
+          echo "📥 Installing official Playit v1.0.10 binary for Ubuntu amd64...";
+          curl -SsL -o /usr/local/bin/playit https://github.com/playit-cloud/playit-agent/releases/download/v1.0.10/playit-linux-amd64 && chmod 755 /usr/local/bin/playit;
+        fi;
+        playit --version || true;
+        mkdir -p /etc/playit && chmod 700 /etc/playit;
+        if [ ! -f /etc/playit/playit.toml ]; then
+          touch /etc/playit/playit.toml && chmod 600 /etc/playit/playit.toml;
+        fi;
+        if [ ! -f /etc/systemd/system/playit-agent.service ]; then
+          cat << 'EOF' > /etc/systemd/system/playit-agent.service
+[Unit]
+Description=Playit.gg Zero-Config Tunnel Agent (BreezeBytes Node)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/playit --stdout --secret-path /etc/playit/playit.toml
+Restart=always
+RestartSec=5s
+LimitNOFILE=65536
+KillMode=process
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+          systemctl daemon-reload;
+          systemctl enable playit-agent.service || true;
+        fi`
+      );
+
+      // 3. Install dependencies & build frontend bundle
       await runRemoteCommand(
         conn,
         `cd ${TARGET_DIR} && npm install && npm run build`
       );
 
-      // 3. Restart backend service & reload nginx
+      // 4. Restart backend service & reload nginx
       await runRemoteCommand(
         conn,
         `systemctl restart breezebytes-api.service && systemctl reload nginx`

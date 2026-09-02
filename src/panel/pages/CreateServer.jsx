@@ -385,11 +385,11 @@ const CreateServer = () => {
             <div className="p-3.5 rounded-2xl bg-s1 border border-s3 flex flex-col justify-between gap-1.5">
               <span className="text-[10px] text-p5 uppercase font-sans font-semibold flex items-center gap-1.5">
                 <BreezeIcon icon={Network} size={16} className="text-p1" />
-                <span>Port</span>
+                <span>Public Ingress</span>
               </span>
-              <span className="text-sm font-bold text-p4 mt-1">Auto-assigned</span>
-              <span className="text-[10px] text-p5/70 font-sans">
-                Dedicated Port
+              <span className="text-sm font-bold text-p4 mt-1">Playit Zero-Config</span>
+              <span className="text-[10px] text-emerald-400 font-sans flex items-center gap-1">
+                <span className="size-1.5 rounded-full bg-emerald-400 inline-block" /> Auto Public Tunnel
               </span>
             </div>
           </div>

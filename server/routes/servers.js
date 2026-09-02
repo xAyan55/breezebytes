@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { servers, allocations, nodes, server_subusers, activity_logs, audit_logs, users } from '../db/database.js';
+import { servers, allocations, nodes, server_subusers, activity_logs, audit_logs, users, playit_tunnels } from '../db/database.js';
 import { authenticate } from '../middleware/auth.js';
 import { requireServerAccess } from '../middleware/rbac.js';
 import { processManager } from '../daemon/processManager.js';
 import { installer } from '../daemon/installer.js';
 import { fileManager } from '../daemon/fileManager.js';
 import { withUserLock, validateUserResourceQuota, getUserResourceStats } from '../services/resourceService.js';
+import { playitService } from '../services/playit/playitService.js';
 
 const router = Router();
 
@@ -29,12 +30,14 @@ router.get('/', authenticate, (req, res) => {
     const alloc = allocations.findOne({ server_id: server.id, is_primary: 1 }) || allocations.findOne({ server_id: server.id });
     const node = nodes.findById(server.node_id);
     const liveStatus = processManager.getStatus(server.id);
+    const primaryTunnel = playit_tunnels.findOne({ server_id: server.id, is_primary: 1 }) || playit_tunnels.findOne({ server_id: server.id });
 
     return {
       ...server,
       status: liveStatus,
       allocation: alloc ? { ip: alloc.ip, port: alloc.port } : null,
-      nodeName: node ? node.name : 'Default Node'
+      nodeName: node ? node.name : 'Default Node',
+      playit: playitService.getSafeTunnelData(primaryTunnel),
     };
   });
 
@@ -163,11 +166,17 @@ router.post('/', authenticate, async (req, res) => {
       servers.update(newServer.id, { status: 'offline' });
     });
 
+    // Asynchronously trigger zero-config Playit tunnel provisioning
+    playitService.provisionServerTunnels(newServer.id).catch((err) => {
+      console.error(`[SERVERS] Playit provisioning background error for server #${newServer.id}:`, err);
+    });
+
     return res.json({
       success: true,
       data: {
         ...newServer,
-        allocation: { ip: alloc.ip, port: alloc.port }
+        allocation: { ip: alloc.ip, port: alloc.port },
+        playit: { status: 'pending', publicAddress: null }
       }
     });
   });
@@ -179,6 +188,8 @@ router.get('/:id', authenticate, requireServerAccess('server.view'), (req, res) 
   const node = nodes.findById(server.node_id);
   const allocs = allocations.find({ server_id: server.id });
   const liveStatus = processManager.getStatus(server.id);
+  const tunnels = playit_tunnels.find({ server_id: server.id });
+  const primaryTunnel = tunnels.find(t => t.is_primary) || tunnels[0] || null;
 
   return res.json({
     success: true,
@@ -186,7 +197,9 @@ router.get('/:id', authenticate, requireServerAccess('server.view'), (req, res) 
       ...server,
       status: liveStatus,
       node: node ? { id: node.id, name: node.name, fqdn: node.fqdn } : null,
-      allocations: allocs.map(a => ({ id: a.id, ip: a.ip, port: a.port, isPrimary: a.is_primary === 1 }))
+      allocations: allocs.map(a => ({ id: a.id, ip: a.ip, port: a.port, isPrimary: a.is_primary === 1 })),
+      playit: playitService.getSafeTunnelData(primaryTunnel),
+      playitTunnels: tunnels.map(t => playitService.getSafeTunnelData(t)),
     }
   });
 });
@@ -223,12 +236,19 @@ router.delete('/:id', authenticate, requireServerAccess('server.settings.manage'
     // ignore
   }
 
-  // 2. Free allocations
+  // 2. Clean up Playit tunnels for this server (resilient)
+  try {
+    await playitService.deleteTunnelsForServer(id);
+  } catch (err) {
+    console.warn(`[SERVERS] Playit tunnel cleanup warning on server delete #${id}:`, err.message);
+  }
+
+  // 3. Free allocations
   allocations.find({ server_id: id }).forEach(a => {
     allocations.update(a.id, { server_id: null, is_primary: 0 });
   });
 
-  // 3. Delete server files from disk
+  // 4. Delete server files from disk
   try {
     const root = fileManager.getServerRoot(id);
     fileManager.deletePath(id, root);
@@ -236,7 +256,7 @@ router.delete('/:id', authenticate, requireServerAccess('server.settings.manage'
     // ignore
   }
 
-  // 4. Delete database record
+  // 5. Delete database record
   servers.delete(id);
 
   audit_logs.insert({
