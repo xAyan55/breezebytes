@@ -9,7 +9,7 @@ import {
   UserCheck,
   ShieldAlert,
   Search,
-  PlusCircle,
+  Trash2,
   Check,
   AlertCircle,
 } from 'lucide-react';

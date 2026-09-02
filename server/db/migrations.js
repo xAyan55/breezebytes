@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { users, nodes, allocations } from './database.js';
+import { FREE_PLAN } from '../config/plans.js';
 
 export function runMigrations() {
   console.log('[DB] Running database initialization and seeding...');
@@ -42,10 +43,36 @@ export function runMigrations() {
       username: 'CEO Admin',
       password_hash: password_hash,
       role: 'owner',
-      is_suspended: 0
+      is_suspended: 0,
+      hosting_ram: FREE_PLAN.ramMb,
+      hosting_cpu: FREE_PLAN.cpuPercent,
+      hosting_disk: FREE_PLAN.diskMb,
+      hosting_server_slots: FREE_PLAN.serverSlots,
+      onboarding_completed: true,
     });
     console.log(`[DB] Seeded Administrator account: ${admin.email} (Role: ${admin.role})`);
   }
 
+  // 4. Backfill user resource entitlements and onboarding completion for legacy users
+  const allUsers = users.find();
+  let migratedUsers = 0;
+  for (const u of allUsers) {
+    const updates = {};
+    if (u.hosting_ram === undefined) updates.hosting_ram = FREE_PLAN.ramMb;
+    if (u.hosting_cpu === undefined) updates.hosting_cpu = FREE_PLAN.cpuPercent;
+    if (u.hosting_disk === undefined) updates.hosting_disk = FREE_PLAN.diskMb;
+    if (u.hosting_server_slots === undefined) updates.hosting_server_slots = FREE_PLAN.serverSlots;
+    if (u.onboarding_completed === undefined) updates.onboarding_completed = true;
+
+    if (Object.keys(updates).length > 0) {
+      users.update(u.id, updates);
+      migratedUsers++;
+    }
+  }
+  if (migratedUsers > 0) {
+    console.log(`[DB] Migrated & backfilled ${migratedUsers} user(s) with resource entitlements.`);
+  }
+
   console.log('[DB] Database ready.');
 }
+

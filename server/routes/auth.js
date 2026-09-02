@@ -3,8 +3,26 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { users, audit_logs } from '../db/database.js';
 import { authenticate, JWT_SECRET } from '../middleware/auth.js';
+import { FREE_PLAN } from '../config/plans.js';
+import { getUserResourceStats } from '../services/resourceService.js';
 
 const router = Router();
+
+function formatUserResponse(user) {
+  return {
+    id: user.id,
+    email: user.email,
+    username: user.username,
+    role: user.role,
+    onboarding_completed: Boolean(user.onboarding_completed),
+    hosting_ram: user.hosting_ram !== undefined ? user.hosting_ram : FREE_PLAN.ramMb,
+    hosting_cpu: user.hosting_cpu !== undefined ? user.hosting_cpu : FREE_PLAN.cpuPercent,
+    hosting_disk: user.hosting_disk !== undefined ? user.hosting_disk : FREE_PLAN.diskMb,
+    hosting_server_slots: user.hosting_server_slots !== undefined ? user.hosting_server_slots : FREE_PLAN.serverSlots,
+    resources: getUserResourceStats(user.id),
+    createdAt: user.created_at,
+  };
+}
 
 // POST /api/v1/auth/login
 router.post('/login', async (req, res) => {
@@ -45,12 +63,7 @@ router.post('/login', async (req, res) => {
     success: true,
     data: {
       token,
-      user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        role: user.role
-      }
+      user: formatUserResponse(user),
     }
   });
 });
@@ -81,7 +94,12 @@ router.post('/register', async (req, res) => {
     username: cleanUsername,
     password_hash,
     role: 'user',
-    is_suspended: 0
+    is_suspended: 0,
+    hosting_ram: FREE_PLAN.ramMb,
+    hosting_cpu: FREE_PLAN.cpuPercent,
+    hosting_disk: FREE_PLAN.diskMb,
+    hosting_server_slots: FREE_PLAN.serverSlots,
+    onboarding_completed: false,
   });
 
   const token = jwt.sign(
@@ -102,12 +120,7 @@ router.post('/register', async (req, res) => {
     success: true,
     data: {
       token,
-      user: {
-        id: newUser.id,
-        email: newUser.email,
-        username: newUser.username,
-        role: newUser.role
-      }
+      user: formatUserResponse(newUser),
     }
   });
 });
@@ -117,13 +130,7 @@ router.get('/me', authenticate, (req, res) => {
   return res.json({
     success: true,
     data: {
-      user: {
-        id: req.user.id,
-        email: req.user.email,
-        username: req.user.username,
-        role: req.user.role,
-        createdAt: req.user.created_at
-      }
+      user: formatUserResponse(req.user),
     }
   });
 });

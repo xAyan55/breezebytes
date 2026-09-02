@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { servers, allocations, nodes, server_subusers, activity_logs, audit_logs } from '../db/database.js';
+import { servers, allocations, nodes, server_subusers, activity_logs, audit_logs, users } from '../db/database.js';
 import { authenticate } from '../middleware/auth.js';
 import { requireServerAccess } from '../middleware/rbac.js';
 import { processManager } from '../daemon/processManager.js';
 import { installer } from '../daemon/installer.js';
 import { fileManager } from '../daemon/fileManager.js';
+import { withUserLock, validateUserResourceQuota, getUserResourceStats } from '../services/resourceService.js';
 
 const router = Router();
 
@@ -40,16 +41,16 @@ router.get('/', authenticate, (req, res) => {
   return res.json({ success: true, data: enriched });
 });
 
-// POST /api/v1/servers - Create server
+// POST /api/v1/servers - Create server with concurrency lock and quota validation
 router.post('/', authenticate, async (req, res) => {
   const {
     name,
     description = '',
     node_id,
     allocation_id,
-    memory = 2048,
-    cpu = 100,
-    disk = 10000,
+    memory,
+    cpu,
+    disk,
     minecraft_version = '1.20.4',
     software = 'paper',
     java_version = '21',
@@ -60,82 +61,115 @@ router.post('/', authenticate, async (req, res) => {
     return res.status(400).json({ success: false, error: { code: 'INVALID_INPUT', message: 'Server name is required.' } });
   }
 
-  // 1. Validate Node
-  const node = node_id ? nodes.findById(node_id) : nodes.findOne();
-  if (!node) {
-    return res.status(400).json({ success: false, error: { code: 'NO_NODE', message: 'No available node found for server allocation.' } });
-  }
+  // Serialized execution per user to guarantee atomic quota checks and prevent race conditions
+  return withUserLock(req.user.id, async () => {
+    // Determine defaults from user's remaining available quota if not provided
+    const userStats = getUserResourceStats(req.user.id);
+    const reqMemory = memory !== undefined ? Number(memory) : (userStats?.ram?.available || 4096);
+    const reqCpu = cpu !== undefined ? Number(cpu) : (userStats?.cpu?.available || 100);
+    const reqDisk = disk !== undefined ? Number(disk) : (userStats?.disk?.available || 10240);
 
-  // 2. Validate Allocation
-  let alloc = null;
-  if (allocation_id) {
-    alloc = allocations.findById(allocation_id);
-    if (!alloc || (alloc.server_id && alloc.server_id !== null)) {
-      return res.status(400).json({ success: false, error: { code: 'ALLOCATION_UNAVAILABLE', message: 'Selected port allocation is already in use.' } });
+    if (isNaN(reqMemory) || reqMemory <= 0 || isNaN(reqCpu) || reqCpu <= 0 || isNaN(reqDisk) || reqDisk <= 0) {
+      return res.status(400).json({ success: false, error: { code: 'INVALID_RESOURCES', message: 'Memory, CPU, and Disk must be positive numbers.' } });
     }
-  } else {
-    // Find first free allocation on node
-    alloc = allocations.findOne(a => a.node_id === node.id && !a.server_id);
-    if (!alloc) {
-      return res.status(400).json({ success: false, error: { code: 'NO_ALLOCATIONS', message: 'No free port allocations available on this node.' } });
+
+    try {
+      const isPrivileged = req.user.role === 'admin' || req.user.role === 'owner';
+      validateUserResourceQuota(
+        req.user.id,
+        { memory: reqMemory, cpu: reqCpu, disk: reqDisk },
+        isPrivileged
+      );
+    } catch (quotaErr) {
+      return res.status(quotaErr.status || 400).json({
+        success: false,
+        error: {
+          code: quotaErr.code || 'QUOTA_EXCEEDED',
+          message: quotaErr.message,
+        },
+      });
     }
-  }
 
-  const serverUuid = uuidv4 ? uuidv4() : Math.random().toString(36).substring(2, 10) + '-' + Date.now();
-  const identifier = serverUuid.substring(0, 8);
-
-  const defaultStartup = startup_command || 'java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar server.jar nogui';
-
-  const newServer = servers.insert({
-    uuid: serverUuid,
-    identifier: identifier,
-    name: name.trim(),
-    description: description.trim(),
-    owner_id: req.user.id,
-    node_id: node.id,
-    status: 'installing',
-    memory: Number(memory),
-    cpu: Number(cpu),
-    disk: Number(disk),
-    minecraft_version,
-    software,
-    java_version,
-    startup_command: defaultStartup,
-    auto_restart: 1,
-    is_suspended: 0
-  });
-
-  // Bind allocation
-  allocations.update(alloc.id, { server_id: newServer.id, is_primary: 1 });
-
-  // Log activity
-  activity_logs.insert({
-    server_id: newServer.id,
-    user_id: req.user.id,
-    action: 'server_create',
-    metadata: JSON.stringify({ name: newServer.name, port: alloc.port })
-  });
-
-  audit_logs.insert({
-    user_id: req.user.id,
-    action: 'server_create',
-    target_type: 'server',
-    target_id: newServer.id,
-    details: JSON.stringify({ name: newServer.name, memory, software })
-  });
-
-  // Asynchronously trigger server installation
-  installer.installServer(newServer).catch((err) => {
-    console.error(`[SERVERS] Installation failed for server #${newServer.id}:`, err);
-    servers.update(newServer.id, { status: 'offline' });
-  });
-
-  return res.json({
-    success: true,
-    data: {
-      ...newServer,
-      allocation: { ip: alloc.ip, port: alloc.port }
+    // 1. Validate Node
+    const node = node_id ? nodes.findById(node_id) : nodes.findOne();
+    if (!node) {
+      return res.status(400).json({ success: false, error: { code: 'NO_NODE', message: 'No available node found for server allocation.' } });
     }
+
+    // 2. Validate Allocation
+    let alloc = null;
+    if (allocation_id) {
+      alloc = allocations.findById(allocation_id);
+      if (!alloc || (alloc.server_id && alloc.server_id !== null)) {
+        return res.status(400).json({ success: false, error: { code: 'ALLOCATION_UNAVAILABLE', message: 'Selected port allocation is already in use.' } });
+      }
+    } else {
+      // Find first free allocation on node
+      alloc = allocations.findOne(a => a.node_id === node.id && !a.server_id);
+      if (!alloc) {
+        return res.status(400).json({ success: false, error: { code: 'NO_ALLOCATIONS', message: 'No free port allocations available on this node.' } });
+      }
+    }
+
+    const serverUuid = uuidv4 ? uuidv4() : Math.random().toString(36).substring(2, 10) + '-' + Date.now();
+    const identifier = serverUuid.substring(0, 8);
+
+    const defaultStartup = startup_command || 'java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar server.jar nogui';
+
+    const newServer = servers.insert({
+      uuid: serverUuid,
+      identifier: identifier,
+      name: name.trim(),
+      description: description.trim(),
+      owner_id: req.user.id,
+      node_id: node.id,
+      status: 'installing',
+      memory: reqMemory,
+      cpu: reqCpu,
+      disk: reqDisk,
+      minecraft_version,
+      software,
+      java_version,
+      startup_command: defaultStartup,
+      auto_restart: 1,
+      is_suspended: 0
+    });
+
+    // Bind allocation
+    allocations.update(alloc.id, { server_id: newServer.id, is_primary: 1 });
+
+    // Mark onboarding complete now that server creation has reached verified creation
+    users.update(req.user.id, { onboarding_completed: true });
+
+    // Log activity
+    activity_logs.insert({
+      server_id: newServer.id,
+      user_id: req.user.id,
+      action: 'server_create',
+      metadata: JSON.stringify({ name: newServer.name, port: alloc.port })
+    });
+
+    audit_logs.insert({
+      user_id: req.user.id,
+      action: 'server_create',
+      target_type: 'server',
+      target_id: newServer.id,
+      details: JSON.stringify({ name: newServer.name, memory: reqMemory, software })
+    });
+
+    // Asynchronously trigger server installation
+    installer.installServer(newServer).catch((err) => {
+      console.error(`[SERVERS] Installation failed for server #${newServer.id}:`, err);
+      servers.update(newServer.id, { status: 'offline' });
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        ...newServer,
+        allocation: { ip: alloc.ip, port: alloc.port }
+      }
+    });
   });
 });
 

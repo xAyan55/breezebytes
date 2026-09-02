@@ -14,6 +14,7 @@ import ServerLayout from "./panel/layouts/ServerLayout.jsx";
 import Dashboard from "./panel/pages/Dashboard.jsx";
 import ServerList from "./panel/pages/ServerList.jsx";
 import CreateServer from "./panel/pages/CreateServer.jsx";
+import Onboarding from "./panel/pages/Onboarding.jsx";
 import AccountSettings from "./panel/pages/account/AccountSettings.jsx";
 
 // Server Specific Pages
@@ -78,6 +79,7 @@ const App = () => {
               }
             >
               <Route index element={<Dashboard />} />
+              <Route path="onboarding" element={<Onboarding />} />
               <Route path="servers" element={<ServerList />} />
               <Route path="servers/create" element={<CreateServer />} />
               <Route path="account" element={<AccountSettings />} />

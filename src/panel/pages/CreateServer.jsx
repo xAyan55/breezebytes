@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
 import api from '../services/api.js';
 import BreezeCard from '../../components/ui/BreezeCard.jsx';
 import BreezeButton from '../../components/ui/BreezeButton.jsx';
@@ -7,6 +8,7 @@ import BreezeInput from '../../components/ui/BreezeInput.jsx';
 import BreezePageHeader from '../../components/ui/BreezePageHeader.jsx';
 import BreezeIcon from '../../components/ui/BreezeIcon.jsx';
 import VersionCombobox from '../../components/ui/VersionCombobox.jsx';
+import { formatMbToGb } from '../utils/formatters.js';
 import {
   SUPPORTED_SOFTWARE,
   getSoftwareVersions,
@@ -21,11 +23,13 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
+  ShieldAlert,
 } from 'lucide-react';
 import clsx from 'clsx';
 
 const CreateServer = () => {
   const navigate = useNavigate();
+  const { user, refetchUser } = useAuth();
 
   // Form State
   const [name, setName] = useState('My Survival SMP');
@@ -42,37 +46,71 @@ const CreateServer = () => {
   const [nodeId, setNodeId] = useState(null);
   const [allocationId, setAllocationId] = useState(null);
 
-  // Resource specifications (Free Plan Presets)
-  const [memory] = useState(2048);
-  const [disk] = useState(10240);
-  const [cpu] = useState(100);
+  // Live account resource availability
+  const [accountResources, setAccountResources] = useState(user?.resources || null);
+  const [resourcesLoading, setResourcesLoading] = useState(!user?.resources);
+
+  // Dynamic Resource specifications (initialized from available account entitlement)
+  const [memory, setMemory] = useState(4096);
+  const [disk, setDisk] = useState(10240);
+  const [cpu, setCpu] = useState(100);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch initial active node & free allocation
+  // Fetch initial active node, free allocation, and live account resources
   useEffect(() => {
+    let isMounted = true;
+
     const fetchPrerequisites = async () => {
       try {
-        const nodesRes = await api.get('/admin/nodes');
+        const [nodesRes, allocsRes, resRes] = await Promise.all([
+          api.get('/admin/nodes').catch(() => ({ success: false })),
+          api.get('/admin/allocations').catch(() => ({ success: false })),
+          api.get('/account/resources').catch(() => ({ success: false })),
+        ]);
+
+        if (!isMounted) return;
+
         if (nodesRes.success && nodesRes.data?.length > 0) {
           setNodeId(nodesRes.data[0].id);
         }
 
-        const allocsRes = await api.get('/admin/allocations');
         if (allocsRes.success && allocsRes.data?.length > 0) {
           const unassigned = allocsRes.data.find((a) => !a.server_id);
           if (unassigned) {
             setAllocationId(unassigned.id);
           }
         }
+
+        if (resRes.success && resRes.data) {
+          setAccountResources(resRes.data);
+          const availRam = resRes.data.ram?.available ?? 4096;
+          const availCpu = resRes.data.cpu?.available ?? 100;
+          const availDisk = resRes.data.disk?.available ?? 10240;
+
+          // Default requested values sensibly based on available resources
+          setMemory(Math.min(4096, availRam));
+          setCpu(Math.min(100, availCpu));
+          setDisk(Math.min(10240, availDisk));
+        }
       } catch (err) {
         console.warn('Prerequisites warning:', err.message);
+      } finally {
+        if (isMounted) setResourcesLoading(false);
       }
     };
 
     fetchPrerequisites();
+    return () => { isMounted = false; };
   }, []);
+
+  // Slot and resource limits derived from live backend truth
+  const availableSlots = accountResources?.servers?.available ?? 1;
+  const isSlotLimitReached = accountResources && availableSlots < 1 && user?.role !== 'admin' && user?.role !== 'owner';
+  const availableRam = accountResources?.ram?.available ?? 4096;
+  const availableCpu = accountResources?.cpu?.available ?? 100;
+  const availableDisk = accountResources?.disk?.available ?? 10240;
 
   // Fetch software versions dynamically via mcjarsService
   const loadVersions = useCallback(async (selectedSoftware) => {
@@ -105,6 +143,27 @@ const CreateServer = () => {
       return;
     }
 
+    // Client UX validation (backend remains authoritative)
+    if (isSlotLimitReached) {
+      setError("You've reached your server limit. Please delete an existing server first.");
+      return;
+    }
+
+    if (user?.role !== 'admin' && user?.role !== 'owner') {
+      if (memory > availableRam) {
+        setError(`You only have ${formatMbToGb(availableRam)} of RAM available.`);
+        return;
+      }
+      if (cpu > availableCpu) {
+        setError(`You only have ${availableCpu}% CPU available.`);
+        return;
+      }
+      if (disk > availableDisk) {
+        setError(`You only have ${formatMbToGb(availableDisk)} storage available.`);
+        return;
+      }
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -114,15 +173,18 @@ const CreateServer = () => {
         software,
         minecraft_version: version,
         java_version: parseInt(javaVersion, 10),
-        memory,
-        disk,
-        cpu,
+        memory: Number(memory),
+        disk: Number(disk),
+        cpu: Number(cpu),
         node_id: nodeId || 1,
         allocation_id: allocationId || null,
       };
 
       const res = await api.post('/servers', payload);
       if (res.success && res.data?.id) {
+        if (refetchUser) {
+          await refetchUser();
+        }
         navigate(`/panel/servers/${res.data.id}/console`);
       } else {
         throw new Error(res.error?.message || 'Server deployment failed');
@@ -257,48 +319,78 @@ const CreateServer = () => {
 
         {/* Step 3: Allocated Resources Overview */}
         <BreezeCard className="p-6 flex flex-col gap-4">
-          <div className="flex items-center gap-2.5 pb-3 border-b-2 border-s3">
-            <BreezeIcon icon={Zap} size={18} className="text-p1" />
-            <h2 className="base-bold text-p4 text-sm font-semibold uppercase tracking-wider">
-              3. Resource Specifications (Standard Plan)
-            </h2>
+          <div className="flex items-center justify-between pb-3 border-b-2 border-s3">
+            <div className="flex items-center gap-2.5">
+              <BreezeIcon icon={Zap} size={18} className="text-p1" />
+              <h2 className="base-bold text-p4 text-sm font-semibold uppercase tracking-wider">
+                3. Resource Allocation & Available Quota
+              </h2>
+            </div>
+            {resourcesLoading ? (
+              <span className="text-xs text-p5 font-mono">Loading quota...</span>
+            ) : (
+              <span className="text-xs text-p1 font-mono">
+                {availableSlots} Slot{availableSlots === 1 ? '' : 's'} Available
+              </span>
+            )}
           </div>
 
+          {/* Slot limit warning banner */}
+          {isSlotLimitReached && (
+            <div className="p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-500/30 flex items-start gap-3 text-amber-300 text-xs animate-in fade-in">
+              <BreezeIcon icon={ShieldAlert} size={18} className="flex-shrink-0 mt-0.5 text-amber-400" />
+              <div className="flex flex-col gap-0.5">
+                <span className="font-bold text-amber-200">Server Limit Reached</span>
+                <span>
+                  You have reached your server limit ({accountResources?.servers?.used ?? 1}/{accountResources?.servers?.limit ?? 1} slots used). You must delete an existing server before deploying a new instance.
+                </span>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
-            <div className="p-3.5 rounded-2xl bg-s1 border border-s3 flex flex-col gap-1">
+            <div className="p-3.5 rounded-2xl bg-s1 border border-s3 flex flex-col justify-between gap-1.5">
               <span className="text-[10px] text-p5 uppercase font-sans font-semibold flex items-center gap-1.5">
                 <BreezeIcon icon={HardDrive} size={16} className="text-p1" />
-                <span>Memory</span>
+                <span>RAM</span>
               </span>
-              <span className="text-sm font-bold text-p4 mt-1">2048 MB</span>
-              <span className="text-[10px] text-p5/70 font-sans">2 GB DDR4 RAM</span>
+              <span className="text-sm font-bold text-p4 mt-1">{formatMbToGb(memory)}</span>
+              <span className="text-[10px] text-p5/70 font-sans">
+                {availableRam} MB available
+              </span>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-s1 border border-s3 flex flex-col gap-1">
+            <div className="p-3.5 rounded-2xl bg-s1 border border-s3 flex flex-col justify-between gap-1.5">
               <span className="text-[10px] text-p5 uppercase font-sans font-semibold flex items-center gap-1.5">
                 <BreezeIcon icon={HardDrive} size={16} className="text-p1" />
-                <span>Disk</span>
+                <span>Storage</span>
               </span>
-              <span className="text-sm font-bold text-p4 mt-1">10240 MB</span>
-              <span className="text-[10px] text-p5/70 font-sans">10 GB NVMe SSD</span>
+              <span className="text-sm font-bold text-p4 mt-1">{formatMbToGb(disk)}</span>
+              <span className="text-[10px] text-p5/70 font-sans">
+                {availableDisk} MB available
+              </span>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-s1 border border-s3 flex flex-col gap-1">
+            <div className="p-3.5 rounded-2xl bg-s1 border border-s3 flex flex-col justify-between gap-1.5">
               <span className="text-[10px] text-p5 uppercase font-sans font-semibold flex items-center gap-1.5">
                 <BreezeIcon icon={Cpu} size={16} className="text-p1" />
-                <span>CPU Limit</span>
+                <span>CPU</span>
               </span>
-              <span className="text-sm font-bold text-p4 mt-1">100%</span>
-              <span className="text-[10px] text-p5/70 font-sans">1 Dedicated Thread</span>
+              <span className="text-sm font-bold text-p4 mt-1">{cpu}%</span>
+              <span className="text-[10px] text-p5/70 font-sans">
+                {availableCpu}% available
+              </span>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-s1 border border-s3 flex flex-col gap-1">
+            <div className="p-3.5 rounded-2xl bg-s1 border border-s3 flex flex-col justify-between gap-1.5">
               <span className="text-[10px] text-p5 uppercase font-sans font-semibold flex items-center gap-1.5">
                 <BreezeIcon icon={Network} size={16} className="text-p1" />
                 <span>Port</span>
               </span>
               <span className="text-sm font-bold text-p4 mt-1">Auto-assigned</span>
-              <span className="text-[10px] text-p5/70 font-sans">Dedicated Port</span>
+              <span className="text-[10px] text-p5/70 font-sans">
+                Dedicated Port
+              </span>
             </div>
           </div>
         </BreezeCard>
@@ -320,8 +412,13 @@ const CreateServer = () => {
             size="md"
             icon={loading ? Loader2 : Server}
             loading={loading}
+            disabled={loading || isSlotLimitReached}
           >
-            {loading ? 'Deploying Instance...' : 'Create Server'}
+            {loading
+              ? 'Deploying Instance...'
+              : isSlotLimitReached
+              ? 'Server Limit Reached'
+              : 'Create Server'}
           </BreezeButton>
         </div>
       </form>

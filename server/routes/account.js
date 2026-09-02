@@ -2,8 +2,33 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { authenticate } from '../middleware/auth.js';
 import { api_keys, notifications, activity_logs, users } from '../db/database.js';
+import { getUserResourceStats } from '../services/resourceService.js';
 
 const router = Router();
+
+// GET /api/v1/account/resources - Canonical resource usage and limits
+router.get('/resources', authenticate, (req, res) => {
+  const stats = getUserResourceStats(req.user.id);
+  if (!stats) {
+    return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'User not found.' } });
+  }
+  return res.json({ success: true, data: stats });
+});
+
+// POST /api/v1/account/onboarding/skip - Skip onboarding without consuming any quota
+router.post('/onboarding/skip', authenticate, (req, res) => {
+  users.update(req.user.id, { onboarding_completed: true });
+  const updatedStats = getUserResourceStats(req.user.id);
+
+  return res.json({
+    success: true,
+    message: 'Onboarding completed.',
+    data: {
+      onboarding_completed: true,
+      resources: updatedStats,
+    }
+  });
+});
 
 // GET /api/v1/account/api-keys
 router.get('/api-keys', authenticate, (req, res) => {
@@ -67,4 +92,24 @@ router.get('/activity', authenticate, (req, res) => {
   return res.json({ success: true, data: list });
 });
 
+// PUT /api/v1/account/password - Convenience endpoint matching AccountSettings.jsx
+router.put('/password', authenticate, (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ success: false, error: { code: 'INVALID_INPUT', message: 'Current and new password are required.' } });
+  }
+
+  const isMatch = bcrypt.compareSync(currentPassword, req.user.password_hash);
+  if (!isMatch) {
+    return res.status(400).json({ success: false, error: { code: 'INVALID_PASSWORD', message: 'Current password does not match.' } });
+  }
+
+  const salt = bcrypt.genSaltSync(12);
+  const password_hash = bcrypt.hashSync(newPassword, salt);
+  users.update(req.user.id, { password_hash });
+
+  return res.json({ success: true, message: 'Password changed successfully.' });
+});
+
 export default router;
+

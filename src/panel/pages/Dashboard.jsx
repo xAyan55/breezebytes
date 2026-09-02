@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import api from '../services/api.js';
 import BreezeCard from '../../components/ui/BreezeCard.jsx';
@@ -10,6 +10,7 @@ import BreezeEmptyState from '../../components/ui/BreezeEmptyState.jsx';
 import BreezeIcon from '../../components/ui/BreezeIcon.jsx';
 import { BreezeCardSkeleton, BreezeSkeleton } from '../../components/ui/BreezeSkeleton.jsx';
 import SoftwareIcon from '../../components/ui/SoftwareIcons.jsx';
+import ResourceSummary from '../components/ResourceSummary.jsx';
 import {
   ArrowRight,
   PlusCircle,
@@ -22,12 +23,21 @@ import {
 } from 'lucide-react';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [servers, setServers] = useState([]);
   const [activity, setActivity] = useState([]);
+  const [resources, setResources] = useState(user?.resources || null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
+
+  // Redirect users who have not completed onboarding
+  useEffect(() => {
+    if (user && user.onboarding_completed === false) {
+      navigate('/panel/onboarding', { replace: true });
+    }
+  }, [user, navigate]);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -41,10 +51,11 @@ const Dashboard = () => {
       setLoading(true);
       setError(null);
 
-      // Fetch servers list and recent user activity concurrently
-      const [serversRes, activityRes] = await Promise.all([
+      // Fetch servers list, recent user activity, and live account resources concurrently
+      const [serversRes, activityRes, resourcesRes] = await Promise.all([
         api.get('/servers'),
         api.get('/account/activity').catch(() => ({ success: false, data: [] })),
+        api.get('/account/resources').catch(() => ({ success: false, data: null })),
       ]);
 
       if (serversRes.success) {
@@ -55,6 +66,10 @@ const Dashboard = () => {
 
       if (activityRes.success) {
         setActivity(activityRes.data || []);
+      }
+
+      if (resourcesRes?.success && resourcesRes.data) {
+        setResources(resourcesRes.data);
       }
     } catch (err) {
       console.error('Failed to load dashboard:', err);
@@ -125,6 +140,14 @@ const Dashboard = () => {
           </BreezeButton>
         </div>
       )}
+
+      {/* ===== Hosting Resource Entitlement & Usage Overview ===== */}
+      <ResourceSummary
+        resources={resources}
+        loading={loading}
+        title="Your Free Resources"
+        subtitle="Active hosting entitlement and current server consumption"
+      />
 
       {/* ===== 4 Real Operational Stat Cards ===== */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

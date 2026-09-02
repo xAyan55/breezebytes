@@ -76,13 +76,18 @@ const AuthForm = ({ mode = "login" }) => {
         setSubmitting(true);
         setAuthError(null);
 
+        let authUser = null;
         if (isLogin) {
-          await login(formData.email.trim(), formData.password);
+          authUser = await login(formData.email.trim(), formData.password);
         } else {
-          await register(formData.email.trim(), formData.username.trim(), formData.password);
+          authUser = await register(formData.email.trim(), formData.username.trim(), formData.password);
         }
 
-        navigate("/panel");
+        if (authUser && authUser.onboarding_completed === false) {
+          navigate("/panel/onboarding");
+        } else {
+          navigate("/panel");
+        }
       } catch (err) {
         setAuthError(err.message || "Authentication failed.");
       } finally {

@@ -4,6 +4,7 @@ import { authenticate } from '../middleware/auth.js';
 import { requireRole } from '../middleware/rbac.js';
 import { users, nodes, allocations, servers, audit_logs } from '../db/database.js';
 import { processManager } from '../daemon/processManager.js';
+import { FREE_PLAN } from '../config/plans.js';
 
 const router = Router();
 router.use(authenticate);
@@ -95,7 +96,12 @@ router.post('/users', (req, res) => {
     username: username.trim(),
     password_hash,
     role,
-    is_suspended: 0
+    is_suspended: 0,
+    hosting_ram: req.body.hosting_ram !== undefined ? Number(req.body.hosting_ram) : FREE_PLAN.ramMb,
+    hosting_cpu: req.body.hosting_cpu !== undefined ? Number(req.body.hosting_cpu) : FREE_PLAN.cpuPercent,
+    hosting_disk: req.body.hosting_disk !== undefined ? Number(req.body.hosting_disk) : FREE_PLAN.diskMb,
+    hosting_server_slots: req.body.hosting_server_slots !== undefined ? Number(req.body.hosting_server_slots) : FREE_PLAN.serverSlots,
+    onboarding_completed: req.body.onboarding_completed !== undefined ? Boolean(req.body.onboarding_completed) : true,
   });
 
   return res.json({
@@ -111,10 +117,14 @@ router.post('/users', (req, res) => {
 
 // PATCH /api/v1/admin/users/:id
 router.patch('/users/:id', (req, res) => {
-  const { role, is_suspended, password } = req.body;
+  const { role, is_suspended, password, hosting_ram, hosting_cpu, hosting_disk, hosting_server_slots } = req.body;
   const updates = {};
   if (role) updates.role = role;
   if (is_suspended !== undefined) updates.is_suspended = is_suspended ? 1 : 0;
+  if (hosting_ram !== undefined) updates.hosting_ram = Number(hosting_ram);
+  if (hosting_cpu !== undefined) updates.hosting_cpu = Number(hosting_cpu);
+  if (hosting_disk !== undefined) updates.hosting_disk = Number(hosting_disk);
+  if (hosting_server_slots !== undefined) updates.hosting_server_slots = Number(hosting_server_slots);
   if (password) {
     const salt = bcrypt.genSaltSync(12);
     updates.password_hash = bcrypt.hashSync(password, salt);
