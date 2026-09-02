@@ -11,6 +11,7 @@
  * - Safe data contract: secrets and credentials never leave this service
  */
 
+import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { playit_tunnels, playit_nodes, servers, allocations, nodes, settings } from '../../db/database.js';
 import { decryptPlayitSecret, encryptPlayitSecret } from '../../utils/cryptoUtils.js';
@@ -61,6 +62,44 @@ class PlayitService {
   }
 
   /**
+   * Resolves secret key for node, checking database, /etc/playit/playit.toml, and environment
+   * @param {number} nodeId
+   * @returns {string}
+   */
+  getNodeSecretKey(nodeId = 1) {
+    const id = Number(nodeId) || 1;
+    const nodeConfig = playit_nodes.findOne({ node_id: id });
+    let secretKey = nodeConfig?.encrypted_secret
+      ? decryptPlayitSecret(nodeConfig.encrypted_secret)
+      : '';
+
+    if (!secretKey) {
+      try {
+        const secretPath = agentManager.getSecretFilePath(id);
+        if (fs.existsSync(secretPath)) {
+          const content = fs.readFileSync(secretPath, 'utf8');
+          const match = content.match(/secret_key\s*=\s*["']([^"']+)["']/i);
+          if (match && match[1]) {
+            secretKey = match[1].trim();
+            if (nodeConfig && secretKey) {
+              playit_nodes.update(nodeConfig.id, {
+                encrypted_secret: encryptPlayitSecret(secretKey),
+                secret_configured: true,
+              });
+            }
+          }
+        }
+      } catch (err) {}
+    }
+
+    if (!secretKey) {
+      secretKey = process.env.PLAYIT_AGENT_SECRET || '';
+    }
+
+    return secretKey;
+  }
+
+  /**
    * Get or create a PlayitApiClientV1 configured for a specific node
    * @param {number} nodeId
    * @returns {PlayitApiClientV1}
@@ -88,9 +127,7 @@ class PlayitService {
       });
     }
 
-    const secretKey = nodeConfig.encrypted_secret
-      ? decryptPlayitSecret(nodeConfig.encrypted_secret)
-      : (process.env.PLAYIT_AGENT_SECRET || '');
+    const secretKey = this.getNodeSecretKey(id);
 
     if (!this.apiClients.has(id)) {
       const client = new PlayitApiClientV1({
@@ -152,9 +189,7 @@ class PlayitService {
   async ensureAgent(nodeId = 1) {
     const id = Number(nodeId) || 1;
     const nodeConfig = playit_nodes.findOne({ node_id: id });
-    const secretKey = nodeConfig?.encrypted_secret
-      ? decryptPlayitSecret(nodeConfig.encrypted_secret)
-      : (process.env.PLAYIT_AGENT_SECRET || '');
+    const secretKey = this.getNodeSecretKey(id);
 
     if (!secretKey) {
       playit_nodes.update(nodeConfig?.id || id, {

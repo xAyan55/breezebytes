@@ -295,7 +295,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=${binaryPath} --stdout ${fs.existsSync(secretPath) ? `--secret-path ${secretPath}` : ''}
+ExecStart=${binaryPath} ${fs.existsSync(secretPath) ? `--secret-path ${secretPath}` : ''}
 Restart=always
 RestartSec=5s
 LimitNOFILE=65536
@@ -401,7 +401,7 @@ WantedBy=multi-user.target
 
     inst.state = AGENT_STATUS.STARTING;
     const secretPath = this.getSecretFilePath(nodeId);
-    const args = ['--stdout'];
+    const args = [];
     if (fs.existsSync(secretPath)) {
       args.push('--secret-path', secretPath);
     }

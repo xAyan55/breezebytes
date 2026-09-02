@@ -64,7 +64,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/playit --stdout --secret-path /etc/playit/playit.toml
+ExecStart=/usr/local/bin/playit --secret-path /etc/playit/playit.toml
 Restart=always
 RestartSec=5s
 LimitNOFILE=65536
