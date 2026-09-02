@@ -239,6 +239,15 @@ const ServerNetwork = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            <Link
+              to={`/panel/servers/${serverId}/connect`}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-p1/20 hover:bg-p1/30 border border-p1/30 text-p1 text-xs font-bold transition-all shadow-sm"
+              title="Open dedicated Connect workspace"
+            >
+              <BreezeIcon icon="connect" size={14} />
+              <span>Connect &rarr;</span>
+            </Link>
+
             <BreezeButton
               variant="secondary"
               size="sm"

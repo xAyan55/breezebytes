@@ -139,6 +139,8 @@ const IMAGE_ICONS = {
   server: '/images/icons/Server.png',
   Terminal: '/images/icons/Terminal.png',
   terminal: '/images/icons/Terminal.png',
+  Connect: '/images/icons/connect.png',
+  connect: '/images/icons/connect.png',
   FolderOpen: '/images/icons/FolderOpen.png',
   folderopen: '/images/icons/FolderOpen.png',
   Users: '/images/icons/Users.png',
@@ -316,6 +318,8 @@ const OPTICAL_SCALES = {
   uploadcloud: 1.06,
   Menu: 1.05,
   menu: 1.05,
+  Connect: 1.05,
+  connect: 1.05,
   PurpurIcon: 1.05,
 };
 

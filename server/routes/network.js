@@ -113,15 +113,53 @@ router.delete('/:id/allocations/:allocationId', authenticate, requireServerAcces
 
 // GET /api/v1/servers/:id/network/playit - Get server's public Playit tunnel info
 router.get('/:id/network/playit', authenticate, requireServerAccess('server.view'), (req, res) => {
+  const nodeId = req.server.node_id || 1;
   const tunnels = playit_tunnels.find({ server_id: req.server.id });
   const primaryTunnel = tunnels.find(t => t.is_primary) || tunnels[0] || null;
-  const nodeConfig = playit_nodes.findOne({ node_id: req.server.node_id });
+  const nodeConfig = playit_nodes.findOne({ node_id: nodeId });
+  const secretKey = playitService.getNodeSecretKey(nodeId);
+
+  // Auto-trigger background provisioning if agent is ready but tunnel hasn't been created yet
+  if (!primaryTunnel && secretKey && (!nodeConfig || nodeConfig.auto_provision !== false)) {
+    playitService.provisionServerTunnels(req.server.id).catch((err) => {
+      console.warn(`[PLAYIT] Auto-provision trigger notice for server #${req.server.id}:`, err.message);
+    });
+  }
 
   return res.json({
     success: true,
     data: {
-      nodeConfigured: Boolean(nodeConfig?.secret_configured || process.env.PLAYIT_AGENT_SECRET),
-      nodeStatus: nodeConfig?.playit_status || 'unconfigured',
+      nodeConfigured: Boolean(secretKey),
+      nodeStatus: nodeConfig?.playit_status || (secretKey ? 'healthy' : 'unconfigured'),
+      agentId: nodeConfig?.agent_id || null,
+      agentVersion: nodeConfig?.agent_version || '1.0.10',
+      nodeId,
+      primary: playitService.getSafeTunnelData(primaryTunnel),
+      tunnels: tunnels.map(t => playitService.getSafeTunnelData(t)),
+    }
+  });
+});
+
+// Alias for dedicated Connect page: GET /api/v1/servers/:id/connect
+router.get('/:id/connect', authenticate, requireServerAccess('server.view'), (req, res) => {
+  const nodeId = req.server.node_id || 1;
+  const tunnels = playit_tunnels.find({ server_id: req.server.id });
+  const primaryTunnel = tunnels.find(t => t.is_primary) || tunnels[0] || null;
+  const nodeConfig = playit_nodes.findOne({ node_id: nodeId });
+  const secretKey = playitService.getNodeSecretKey(nodeId);
+
+  if (!primaryTunnel && secretKey && (!nodeConfig || nodeConfig.auto_provision !== false)) {
+    playitService.provisionServerTunnels(req.server.id).catch(() => {});
+  }
+
+  return res.json({
+    success: true,
+    data: {
+      nodeConfigured: Boolean(secretKey),
+      nodeStatus: nodeConfig?.playit_status || (secretKey ? 'healthy' : 'unconfigured'),
+      agentId: nodeConfig?.agent_id || null,
+      agentVersion: nodeConfig?.agent_version || '1.0.10',
+      nodeId,
       primary: playitService.getSafeTunnelData(primaryTunnel),
       tunnels: tunnels.map(t => playitService.getSafeTunnelData(t)),
     }

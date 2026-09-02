@@ -153,6 +153,7 @@ const ServerLayout = () => {
 
   const navItems = [
     { to: `/panel/servers/${effectiveId}/console`, icon: Terminal, label: 'Console', matchExact: true },
+    { to: `/panel/servers/${effectiveId}/connect`, icon: 'connect', label: 'Connect' },
     { to: `/panel/servers/${effectiveId}/files`, icon: FolderOpen, label: 'Files' },
     { to: `/panel/servers/${effectiveId}/players`, icon: Users, label: 'Players' },
     { to: `/panel/servers/${effectiveId}/backups`, icon: Archive, label: 'Backups' },

@@ -19,6 +19,7 @@ import AccountSettings from "./panel/pages/account/AccountSettings.jsx";
 
 // Server Specific Pages
 import ServerConsole from "./panel/pages/server/ServerConsole.jsx";
+import ServerConnect from "./panel/pages/server/ServerConnect.jsx";
 import ServerFiles from "./panel/pages/server/ServerFiles.jsx";
 import ServerBackups from "./panel/pages/server/ServerBackups.jsx";
 import ServerSchedules from "./panel/pages/server/ServerSchedules.jsx";
@@ -150,6 +151,7 @@ const App = () => {
             >
               <Route index element={<ServerConsole />} />
               <Route path="console" element={<ServerConsole />} />
+              <Route path="connect" element={<ServerConnect />} />
               <Route path="files" element={<ServerFiles />} />
               <Route path="players" element={<ServerPlayers />} />
               <Route path="backups" element={<ServerBackups />} />
