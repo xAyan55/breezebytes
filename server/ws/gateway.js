@@ -51,6 +51,13 @@ export function setupWebSocketGateway(server) {
         const payload = JSON.parse(message.toString());
         const { action, token, channel, command } = payload;
 
+        // Heartbeat / ping from client
+        if (action === 'ping') {
+          ws.isAlive = true;
+          ws.send(JSON.stringify({ event: 'pong', timestamp: Date.now() }));
+          return;
+        }
+
         // 1. Authenticate connection
         if (action === 'auth') {
           try {

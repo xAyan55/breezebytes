@@ -10,7 +10,10 @@ export const SocketProvider = ({ children }) => {
   const isAuthenticatedRef = useRef(false);
   const isDestroyedRef = useRef(false);
   const reconnectTimerRef = useRef(null);
+  const heartbeatTimerRef = useRef(null);
+  const pingPendingRef = useRef(false);
   const [connected, setConnected] = useState(false);
+  const [connectionEpoch, setConnectionEpoch] = useState(0);
   const listenersRef = useRef(new Map()); // channel -> Set of callback functions
 
   const sendPendingSubscriptions = useCallback(() => {
@@ -19,10 +22,45 @@ export const SocketProvider = ({ children }) => {
         try {
           wsRef.current.send(JSON.stringify({ action: 'subscribe', channel }));
         } catch {
-          // ignore
+          // ignore send error
         }
       });
     }
+  }, []);
+
+  const clearHeartbeat = () => {
+    if (heartbeatTimerRef.current) {
+      clearInterval(heartbeatTimerRef.current);
+      heartbeatTimerRef.current = null;
+    }
+    pingPendingRef.current = false;
+  };
+
+  const startHeartbeat = useCallback(() => {
+    clearHeartbeat();
+    heartbeatTimerRef.current = setInterval(() => {
+      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+        return;
+      }
+
+      // If previous ping was never acknowledged within 15s, socket is stalled/dead
+      if (pingPendingRef.current) {
+        console.warn('[WS] Heartbeat timeout detected (no pong response). Reconnecting...');
+        try {
+          wsRef.current.close();
+        } catch {
+          // ignore
+        }
+        return;
+      }
+
+      try {
+        pingPendingRef.current = true;
+        wsRef.current.send(JSON.stringify({ action: 'ping' }));
+      } catch {
+        pingPendingRef.current = false;
+      }
+    }, 15000);
   }, []);
 
   const connect = useCallback(() => {
@@ -31,6 +69,7 @@ export const SocketProvider = ({ children }) => {
     if (!token || !user) {
       setConnected(false);
       isAuthenticatedRef.current = false;
+      clearHeartbeat();
       return;
     }
 
@@ -56,32 +95,43 @@ export const SocketProvider = ({ children }) => {
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
       isAuthenticatedRef.current = false;
+      pingPendingRef.current = false;
 
       ws.onopen = () => {
         if (isDestroyedRef.current) {
           ws.close();
           return;
         }
-        // Send authentication
+        // Send authentication immediately
         ws.send(JSON.stringify({ action: 'auth', token }));
       };
 
       ws.onmessage = (event) => {
+        // Any message received means the link is alive
+        pingPendingRef.current = false;
+
         try {
           const payload = JSON.parse(event.data);
           const { channel, event: eventName, data } = payload;
 
+          if (eventName === 'pong') {
+            return;
+          }
+
           if (eventName === 'auth_success') {
             isAuthenticatedRef.current = true;
             setConnected(true);
-            // Once authenticated, subscribe to all active channels
+            setConnectionEpoch((prev) => prev + 1);
+            // Once authenticated, subscribe to all active channels and start keepalive
             sendPendingSubscriptions();
+            startHeartbeat();
             return;
           }
 
           if (eventName === 'auth_error') {
             isAuthenticatedRef.current = false;
             setConnected(false);
+            clearHeartbeat();
             return;
           }
 
@@ -102,11 +152,13 @@ export const SocketProvider = ({ children }) => {
       ws.onclose = () => {
         setConnected(false);
         isAuthenticatedRef.current = false;
+        clearHeartbeat();
+
         if (!isDestroyedRef.current) {
           if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
           reconnectTimerRef.current = setTimeout(() => {
             connect();
-          }, 3000);
+          }, 2000);
         }
       };
 
@@ -121,15 +173,18 @@ export const SocketProvider = ({ children }) => {
       console.error('[WS Init Error]', err);
       setConnected(false);
       isAuthenticatedRef.current = false;
+      clearHeartbeat();
     }
-  }, [user, sendPendingSubscriptions]);
+  }, [user, sendPendingSubscriptions, startHeartbeat]);
 
+  // Initial connection
   useEffect(() => {
     isDestroyedRef.current = false;
     connect();
 
     return () => {
       isDestroyedRef.current = true;
+      clearHeartbeat();
       if (reconnectTimerRef.current) {
         clearTimeout(reconnectTimerRef.current);
         reconnectTimerRef.current = null;
@@ -144,6 +199,46 @@ export const SocketProvider = ({ children }) => {
       }
     };
   }, [connect]);
+
+  // Auto-heal on tab switch, window focus, or network reconnect
+  useEffect(() => {
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === 'visible') {
+        const isSocketHealthy =
+          wsRef.current &&
+          wsRef.current.readyState === WebSocket.OPEN &&
+          isAuthenticatedRef.current;
+
+        if (!isSocketHealthy) {
+          // Socket was closed or throttled while away; reconnect immediately!
+          if (reconnectTimerRef.current) {
+            clearTimeout(reconnectTimerRef.current);
+            reconnectTimerRef.current = null;
+          }
+          connect();
+        } else {
+          // Socket claims to be open; send an immediate ping to verify link and refresh subscriptions
+          try {
+            pingPendingRef.current = true;
+            wsRef.current.send(JSON.stringify({ action: 'ping' }));
+            sendPendingSubscriptions();
+          } catch {
+            connect();
+          }
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+    window.addEventListener('focus', handleVisibilityOrFocus);
+    window.addEventListener('online', handleVisibilityOrFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+      window.removeEventListener('focus', handleVisibilityOrFocus);
+      window.removeEventListener('online', handleVisibilityOrFocus);
+    };
+  }, [connect, sendPendingSubscriptions]);
 
   const subscribe = useCallback((channel, callback) => {
     if (!channel || !callback) return () => {};
@@ -190,11 +285,12 @@ export const SocketProvider = ({ children }) => {
 
   const sendCommand = useCallback((serverId, command) => {
     if (!serverId || !command) return;
-    if (
+    const isSocketOpen =
       wsRef.current &&
       wsRef.current.readyState === WebSocket.OPEN &&
-      isAuthenticatedRef.current
-    ) {
+      isAuthenticatedRef.current;
+
+    if (isSocketOpen) {
       try {
         wsRef.current.send(
           JSON.stringify({
@@ -204,20 +300,25 @@ export const SocketProvider = ({ children }) => {
           }),
         );
       } catch {
-        // ignore
+        // If socket send threw, fall back to HTTP
+        api.post(`/servers/${serverId}/command`, { command }).catch(console.error);
+        connect();
       }
     } else {
-      // HTTP fallback
+      // HTTP fallback if socket not open, and trigger reconnect
       api.post(`/servers/${serverId}/command`, { command }).catch(console.error);
+      connect();
     }
-  }, []);
+  }, [connect]);
 
   return (
     <SocketContext.Provider
       value={{
         connected,
+        connectionEpoch,
         subscribe,
         sendCommand,
+        reconnect: connect,
       }}
     >
       {children}

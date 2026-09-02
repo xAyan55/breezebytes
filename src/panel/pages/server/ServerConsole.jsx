@@ -32,7 +32,7 @@ const consoleLogCache = new Map(); // serverId -> logs[]
 
 const ServerConsole = () => {
   const { server, status } = useOutletContext();
-  const { connected, subscribe, sendCommand } = useSocket();
+  const { connected, connectionEpoch, subscribe, sendCommand, reconnect } = useSocket();
   const serverId = server?.id;
 
   const [logs, setLogs] = useState(() => {
@@ -76,13 +76,23 @@ const ServerConsole = () => {
       if (prev.length === 0) {
         return newLogs.slice(-MAX_LOG_LINES);
       }
-      // If prev already has logs, merge by comparing recent entries
-      const prevTexts = new Set(prev.slice(-100).map((l) => (typeof l === 'string' ? l : l.text)));
-      const filtered = newLogs.filter((l) => {
-        const txt = typeof l === 'string' ? l : l.text;
-        return !prevTexts.has(txt);
+      // If prev already has logs, identify recent unique entries by id or timestamp:::text
+      const prevKeys = new Set(
+        prev.slice(-300).map((l) =>
+          l.id !== undefined
+            ? `id:${l.id}`
+            : `${l.timestamp || ''}:::${typeof l === 'string' ? l : l.text || ''}`
+        )
+      );
+      const toAppend = newLogs.filter((l) => {
+        const key =
+          l.id !== undefined
+            ? `id:${l.id}`
+            : `${l.timestamp || ''}:::${typeof l === 'string' ? l : l.text || ''}`;
+        return !prevKeys.has(key);
       });
-      return [...prev, ...filtered].slice(-MAX_LOG_LINES);
+      if (toAppend.length === 0) return prev;
+      return [...prev, ...toAppend].slice(-MAX_LOG_LINES);
     });
   }, [updateLogs]);
 
@@ -168,15 +178,54 @@ const ServerConsole = () => {
     }
   };
 
+  // Auto-sync logs when tab visibility changes or window gains focus
+  useEffect(() => {
+    const handleActive = () => {
+      if (document.visibilityState === 'visible' && serverId) {
+        fetchHistory();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleActive);
+    window.addEventListener('focus', handleActive);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleActive);
+      window.removeEventListener('focus', handleActive);
+    };
+  }, [serverId, fetchHistory]);
+
+  // Re-sync logs whenever connection re-establishes
+  useEffect(() => {
+    if (connected && serverId) {
+      fetchHistory();
+    }
+  }, [connected, connectionEpoch, serverId, fetchHistory]);
+
   const handleSendCommand = (e) => {
     e?.preventDefault();
-    if (!command.trim() || !serverId) return;
+    const cmd = command.trim();
+    if (!cmd || !serverId) return;
 
-    sendCommand(serverId, command.trim());
-    setCommandHistory((prev) => [...prev, command.trim()]);
+    // Optimistically show command in the terminal
+    const cleanCmd = cmd.replace(/^\//, '');
+    updateLogs((prev) => [
+      ...prev.slice(-(MAX_LOG_LINES - 1)),
+      { timestamp: new Date().toISOString(), text: `> ${cleanCmd}` },
+    ]);
+
+    sendCommand(serverId, cleanCmd);
+    setCommandHistory((prev) => [...prev, cmd]);
     setHistoryIndex(-1);
     setCommand('');
     scrollToBottom();
+
+    // If socket is disconnected, poll logs after a short delay to pull command output
+    if (!connected) {
+      setTimeout(() => {
+        if (isMountedRef.current) fetchHistory();
+      }, 600);
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -311,7 +360,17 @@ const ServerConsole = () => {
               </span>
 
               {/* Real Connection Status Indicator */}
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-s1 border border-s3 text-[10px] font-medium text-p5">
+              <button
+                type="button"
+                onClick={!connected ? () => reconnect?.() : undefined}
+                className={clsx(
+                  'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium transition-all duration-300',
+                  connected
+                    ? 'bg-s1 border border-s3 text-p5'
+                    : 'bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-500/25 cursor-pointer',
+                )}
+                title={!connected ? 'Click to reconnect console' : undefined}
+              >
                 <span
                   className={clsx(
                     'size-1.5 rounded-full',
@@ -329,7 +388,7 @@ const ServerConsole = () => {
                       : 'Server Offline'
                     : 'Reconnecting...'}
                 </span>
-              </span>
+              </button>
             </div>
 
             <div className="flex items-center gap-2">

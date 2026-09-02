@@ -129,6 +129,8 @@ class ProcessManager extends EventEmitter {
       '-XX:+UseG1GC',
       '-XX:+ParallelRefProcEnabled',
       '-XX:MaxGCPauseMillis=200',
+      '-Dterminal.jline=false',
+      '-Dterminal.ansi=true',
       '-jar',
       'server.jar',
       'nogui'
@@ -137,14 +139,16 @@ class ProcessManager extends EventEmitter {
     console.log(`[DAEMON] Spawning server ${server.name} (#${id}) with command: ${javaBin} ${args.join(' ')}`);
 
     const logEntry = (line) => {
-      const entry = {
-        timestamp: new Date().toISOString(),
-        text: line
-      };
       if (!this.processes.has(id)) {
-        this.processes.set(id, { proc: null, logs: [], status: 'starting', crashCount: 0 });
+        this.processes.set(id, { proc: null, logs: [], status: 'starting', crashCount: 0, logSeq: 0 });
       }
       const data = this.processes.get(id);
+      data.logSeq = (data.logSeq || 0) + 1;
+      const entry = {
+        id: data.logSeq,
+        timestamp: new Date().toISOString(),
+        text: typeof line === 'string' ? line : line.text || ''
+      };
       data.logs.push(entry);
       if (data.logs.length > 1000) {
         data.logs.shift();
@@ -319,10 +323,17 @@ class ProcessManager extends EventEmitter {
       throw new Error('Server is not online to receive commands.');
     }
 
-    const cleanCmd = command.trim();
+    if (!item.proc.stdin || !item.proc.stdin.writable) {
+      throw new Error('Server input stream is not available or writable.');
+    }
+
+    // Strip leading slash if entered (e.g. "/tps" -> "tps")
+    const cleanCmd = command.trim().replace(/^\//, '');
     item.proc.stdin.write(cleanCmd + '\n');
 
+    item.logSeq = (item.logSeq || 0) + 1;
     const entry = {
+      id: item.logSeq,
       timestamp: new Date().toISOString(),
       text: `> ${cleanCmd}`
     };
