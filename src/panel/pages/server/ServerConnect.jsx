@@ -22,6 +22,7 @@ import {
   ExternalLink,
   Power,
   RotateCw,
+  Sparkles,
 } from 'lucide-react';
 
 const ServerConnect = () => {
@@ -32,6 +33,7 @@ const ServerConnect = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [copiedHost, setCopiedHost] = useState(false);
+  const [copiedDomain, setCopiedDomain] = useState(false);
   const [copiedFull, setCopiedFull] = useState(false);
   const [copiedLocal, setCopiedLocal] = useState(false);
   const [activeTab, setActiveTab] = useState('java'); // 'java' | 'bedrock' | 'details'
@@ -81,6 +83,9 @@ const ServerConnect = () => {
     if (type === 'host') {
       setCopiedHost(true);
       setTimeout(() => setCopiedHost(false), 2000);
+    } else if (type === 'domain') {
+      setCopiedDomain(true);
+      setTimeout(() => setCopiedDomain(false), 2000);
     } else if (type === 'full') {
       setCopiedFull(true);
       setTimeout(() => setCopiedFull(false), 2000);
@@ -340,8 +345,26 @@ const ServerConnect = () => {
             </div>
           </div>
 
+          {/* SRV Domain Helper Pill */}
+          {isTunnelActive && primaryTunnel?.domain && (
+            <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-2xl bg-s3/40 border border-s3/70 text-xs">
+              <div className="flex items-center gap-2 text-p3">
+                <BreezeIcon icon={Sparkles} size={15} className="text-amber-400 flex-shrink-0" />
+                <span className="text-p4 font-medium">Auto SRV Domain (No Port Needed in Minecraft):</span>
+                <span className="font-mono font-bold text-p1 select-all">{primaryTunnel.domain}</span>
+              </div>
+              <button
+                onClick={() => copyToClipboard(primaryTunnel.domain, 'domain')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-s4/70 hover:bg-s4 text-p2 hover:text-p1 text-[11px] font-bold transition-all shadow-sm"
+              >
+                <BreezeIcon icon={copiedDomain ? Check : Copy} size={13} />
+                <span>{copiedDomain ? 'Copied!' : 'Copy SRV Domain'}</span>
+              </button>
+            </div>
+          )}
+
           {/* Tunnel Quick Metrics Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
             <div className="p-3.5 rounded-xl bg-s3/40 border border-s3/60">
               <span className="text-[10px] font-bold text-p5 uppercase tracking-wider block">Edge Protocol</span>
               <div className="flex items-center gap-1.5 mt-1">

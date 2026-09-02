@@ -421,9 +421,18 @@ export class PlayitApiClientV1 {
       }
     }
 
-    publicAddress = autoAddressWithPort || domainAddress || autoAddressWithoutPort || ipv4Address;
+    // 3. Playit Anycast routing requires the canonical domain for Minecraft handshake matching:
+    if (domain && publicPort) {
+      publicAddress = `${domain}:${publicPort}`;
+    } else if (domainAddress && domainAddress.includes(':')) {
+      publicAddress = domainAddress;
+    } else if (domain) {
+      publicAddress = domain;
+    } else {
+      publicAddress = autoAddressWithPort || domainAddress || autoAddressWithoutPort || ipv4Address;
+    }
 
-    // 3. Fallback to display_address if present
+    // 4. Fallback to display_address if present
     if (!publicAddress && tunnel.display_address) {
       publicAddress = tunnel.display_address;
     }
