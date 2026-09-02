@@ -86,9 +86,10 @@ const Dashboard = () => {
   const copyAddress = (server, e) => {
     e.preventDefault();
     e.stopPropagation();
-    const addr = server.allocation
+    const playitAddr = server?.playit?.status === 'active' && server?.playit?.publicAddress ? server.playit.publicAddress : null;
+    const addr = playitAddr || (server.allocation
       ? `${server.allocation.ip === '0.0.0.0' ? server.node?.fqdn || 'localhost' : server.allocation.ip}:${server.allocation.port}`
-      : '';
+      : '');
     if (addr) {
       navigator.clipboard.writeText(addr);
       setCopiedId(server.id);
@@ -216,9 +217,10 @@ const Dashboard = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {servers.map((server) => {
-              const address = server.allocation
+              const playitAddr = server?.playit?.status === 'active' && server?.playit?.publicAddress ? server.playit.publicAddress : null;
+              const address = playitAddr || (server.allocation
                 ? `${server.allocation.ip === '0.0.0.0' ? server.node?.fqdn || 'localhost' : server.allocation.ip}:${server.allocation.port}`
-                : 'Unassigned';
+                : 'Unassigned');
 
               return (
                 <BreezeCard
@@ -293,7 +295,7 @@ const Dashboard = () => {
                   {/* Card Action Link */}
                   <div className="pt-3 border-t-2 border-s3/80 flex items-center justify-between">
                     <span className="text-[11px] text-p5/70 font-mono">
-                      Port: #{server.allocation?.port || 'N/A'}
+                      Port: #{server.playit?.status === 'active' && server.playit?.publicPort ? server.playit.publicPort : (server.allocation?.port || 'N/A')}
                     </span>
                     <Link
                       to={`/panel/servers/${server.id}/console`}

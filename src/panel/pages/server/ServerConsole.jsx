@@ -263,10 +263,11 @@ const ServerConsole = () => {
   };
 
   const copyAddress = () => {
-    const addr =
-      server?.allocation
-        ? `${server.allocation.ip === '0.0.0.0' ? server.node?.fqdn || 'localhost' : server.allocation.ip}:${server.allocation.port}`
-        : '';
+    const playitAddr = server?.playit?.status === 'active' && server?.playit?.publicAddress ? server.playit.publicAddress : null;
+    const primaryAlloc = server?.allocation || (server?.allocations && (server.allocations.find(a => a.isPrimary) || server.allocations[0]));
+    const addr = playitAddr || (primaryAlloc
+      ? `${primaryAlloc.ip === '0.0.0.0' ? server.node?.fqdn || 'localhost' : primaryAlloc.ip}:${primaryAlloc.port}`
+      : '');
     if (addr) {
       navigator.clipboard.writeText(addr);
       setAddrCopied(true);
@@ -315,9 +316,11 @@ const ServerConsole = () => {
 
   const isOnline = status === 'running';
 
-  const serverAddress = server?.allocation
-    ? `${server.allocation.ip === '0.0.0.0' ? server.node?.fqdn || 'localhost' : server.allocation.ip}:${server.allocation.port}`
-    : 'Unassigned';
+  const playitAddr = server?.playit?.status === 'active' && server?.playit?.publicAddress ? server.playit.publicAddress : null;
+  const primaryAlloc = server?.allocation || (server?.allocations && (server.allocations.find(a => a.isPrimary) || server.allocations[0]));
+  const serverAddress = playitAddr || (primaryAlloc
+    ? `${primaryAlloc.ip === '0.0.0.0' ? server.node?.fqdn || 'localhost' : primaryAlloc.ip}:${primaryAlloc.port}`
+    : 'Unassigned');
 
   const cpuLimit = server?.cpu || 100;
   const cpuPercent = isOnline ? Math.min(100, Math.max(0, (stats.cpu / cpuLimit) * 100)) : 0;
@@ -510,7 +513,7 @@ const ServerConsole = () => {
               </span>
             </div>
           </div>
-          {server?.allocation && (
+          {(playitAddr || primaryAlloc) && (
             <button
               onClick={copyAddress}
               className="p-1.5 rounded-xl text-p5 hover:text-p1 hover:bg-s5/40 border border-transparent hover:border-s3 transition-colors cursor-pointer flex-shrink-0"

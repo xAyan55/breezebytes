@@ -190,6 +190,7 @@ router.get('/:id', authenticate, requireServerAccess('server.view'), (req, res) 
   const liveStatus = processManager.getStatus(server.id);
   const tunnels = playit_tunnels.find({ server_id: server.id });
   const primaryTunnel = tunnels.find(t => t.is_primary) || tunnels[0] || null;
+  const primaryAlloc = allocs.find(a => a.is_primary === 1) || allocs[0] || null;
 
   return res.json({
     success: true,
@@ -197,6 +198,7 @@ router.get('/:id', authenticate, requireServerAccess('server.view'), (req, res) 
       ...server,
       status: liveStatus,
       node: node ? { id: node.id, name: node.name, fqdn: node.fqdn } : null,
+      allocation: primaryAlloc ? { ip: primaryAlloc.ip, port: primaryAlloc.port } : null,
       allocations: allocs.map(a => ({ id: a.id, ip: a.ip, port: a.port, isPrimary: a.is_primary === 1 })),
       playit: playitService.getSafeTunnelData(primaryTunnel),
       playitTunnels: tunnels.map(t => playitService.getSafeTunnelData(t)),
