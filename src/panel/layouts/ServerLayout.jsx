@@ -5,6 +5,7 @@ import api from '../services/api.js';
 import BreezeBadge from '../../components/ui/BreezeBadge.jsx';
 import BreezeButton from '../../components/ui/BreezeButton.jsx';
 import BreezeIcon from '../../components/ui/BreezeIcon.jsx';
+import ErrorBoundary from '../../components/ui/ErrorBoundary.jsx';
 import SoftwareIcon from '../../components/ui/SoftwareIcons.jsx';
 import {
   Terminal,
@@ -483,7 +484,9 @@ const ServerLayout = () => {
 
             {/* ===== Page Content Outlet ===== */}
             <div className="flex-1 flex flex-col min-w-0 w-full">
-              <Outlet context={{ server, status, fetchServer }} />
+              <ErrorBoundary key={location.pathname}>
+                <Outlet context={{ server, status, fetchServer }} />
+              </ErrorBoundary>
             </div>
           </div>
         </main>

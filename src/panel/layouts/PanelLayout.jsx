@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import BreezeIcon from '../../components/ui/BreezeIcon.jsx';
+import ErrorBoundary from '../../components/ui/ErrorBoundary.jsx';
 import {
   LayoutDashboard,
   Server,
@@ -260,7 +261,9 @@ const PanelLayout = () => {
 
         {/* Page Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
-          <Outlet />
+          <ErrorBoundary key={location.pathname}>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, Link } from 'react-router-dom';
 import api from '../../services/api.js';
 import BreezeButton from '../../../components/ui/BreezeButton.jsx';
 import BreezeIcon from '../../../components/ui/BreezeIcon.jsx';
@@ -15,7 +15,6 @@ import {
   RotateCw,
   Zap,
   Power,
-  Server,
   Radio,
 } from 'lucide-react';
 import clsx from 'clsx';
