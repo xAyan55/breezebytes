@@ -2,6 +2,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import jwt from 'jsonwebtoken';
 import { processManager } from '../daemon/processManager.js';
 import { installer } from '../daemon/installer.js';
+import { playerManager } from '../daemon/playerManager.js';
 import { servers, server_subusers, users } from '../db/database.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'breezebytes_super_secret_jwt_key_2026';
@@ -35,6 +36,10 @@ export function setupWebSocketGateway(server) {
 
   installer.on('progress', ({ serverId, progress, status }) => {
     broadcastToChannel(`server:${serverId}:install`, 'install_progress', { progress, status });
+  });
+
+  playerManager.on('players_update', (snapshot) => {
+    broadcastToChannel(`server:${snapshot.serverId}:players`, 'players_update', snapshot);
   });
 
   wss.on('connection', (ws, req) => {
@@ -115,6 +120,16 @@ export function setupWebSocketGateway(server) {
             if (match[2] === 'status') {
               ws.send(JSON.stringify({ channel, event: 'status_change', data: { serverId, status: processManager.getStatus(serverId) } }));
             }
+
+            // If subscribed to players, subscribe worker and send initial roster
+            if (match[2] === 'players') {
+              playerManager.subscribe(serverId);
+              playerManager.getPlayersData(serverId).then((data) => {
+                if (ws.readyState === WebSocket.OPEN && ws.subscriptions.has(channel)) {
+                  ws.send(JSON.stringify({ channel, event: 'players_update', data }));
+                }
+              }).catch(() => {});
+            }
           } else {
             ws.subscriptions.add(channel);
             ws.send(JSON.stringify({ event: 'subscribed', channel }));
@@ -123,6 +138,10 @@ export function setupWebSocketGateway(server) {
 
         // 3. Unsubscribe from channel
         if (action === 'unsubscribe' && channel) {
+          const match = channel.match(/^server:(\d+):players$/);
+          if (match) {
+            playerManager.unsubscribe(Number(match[1]));
+          }
           ws.subscriptions.delete(channel);
           ws.send(JSON.stringify({ event: 'unsubscribed', channel }));
         }
@@ -162,6 +181,12 @@ export function setupWebSocketGateway(server) {
     });
 
     ws.on('close', () => {
+      for (const channel of ws.subscriptions) {
+        const match = channel.match(/^server:(\d+):players$/);
+        if (match) {
+          playerManager.unsubscribe(Number(match[1]));
+        }
+      }
       ws.subscriptions.clear();
     });
   });

@@ -182,5 +182,6 @@ export const verification_tokens = dbStore.table('verification_tokens');
 export const password_resets = dbStore.table('password_resets');
 export const playit_tunnels = dbStore.table('playit_tunnels');
 export const playit_nodes = dbStore.table('playit_nodes');
+export const server_players = dbStore.table('server_players');
 
 export default dbStore;

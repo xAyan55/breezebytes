@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { users, nodes, allocations, settings, playit_nodes } from './database.js';
+import { users, nodes, allocations, settings, playit_nodes, server_players } from './database.js';
 import { FREE_PLAN } from '../config/plans.js';
 
 export function runMigrations() {
@@ -130,6 +130,11 @@ export function runMigrations() {
         last_error_code: null,
       });
     }
+  }
+
+  // 7. Ensure server_players collection is initialized
+  if (!server_players.data) {
+    server_players.data = [];
   }
 
   console.log('[DB] Database ready.');
