@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
+import { useAuth } from "../panel/context/AuthContext.jsx";
 import AuthBranding from "../components/auth/AuthBranding.jsx";
 import AuthForm from "../components/auth/AuthForm.jsx";
 
@@ -20,6 +21,7 @@ const ArrowLeftIcon = () => (
 );
 
 const AuthPage = ({ mode = "login" }) => {
+  const { isAuthenticated, loading } = useAuth();
   useEffect(() => {
     let title = "Sign In — BreezeBytes";
     if (mode === "register") title = "Create Account — BreezeBytes";
@@ -44,6 +46,10 @@ const AuthPage = ({ mode = "login" }) => {
       }
     };
   }, [mode]);
+
+  if (!loading && isAuthenticated && (mode === "login" || mode === "register")) {
+    return <Navigate to="/panel" replace />;
+  }
 
   return (
     <div className="min-h-screen w-full bg-s1 flex flex-col lg:flex-row overflow-x-hidden">

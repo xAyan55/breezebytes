@@ -2,10 +2,15 @@ import { Link as LinkScroll } from "react-scroll";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import clsx from "clsx";
+import { useAuth } from "../panel/context/AuthContext.jsx";
+import api from "../panel/services/api.js";
 
 const Header = () => {
+  const { isAuthenticated, loading } = useAuth();
   const [hasScrolled, setHasScrolled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+
+  const isLoggedIn = isAuthenticated || (loading && !!api.getToken());
 
   useEffect(() => {
     const handleScroll = () => {
@@ -101,21 +106,33 @@ const Header = () => {
                 <li className="nav-li">
                   <NavLink title="faq" to="faq" />
                   <div className="dot" />
-                  <Link
-                    to="/login"
-                    onClick={() => setIsOpen(false)}
-                    className="base-bold text-p4 uppercase transition-colors duration-500 cursor-pointer hover:text-p1 max-lg:my-4 max-lg:h5"
-                  >
-                    Sign In
-                  </Link>
-                  <div className="dot" />
-                  <Link
-                    to="/register"
-                    onClick={() => setIsOpen(false)}
-                    className="base-bold text-p1 uppercase transition-colors duration-500 cursor-pointer hover:text-p4 max-lg:my-4 max-lg:h5"
-                  >
-                    Get Started
-                  </Link>
+                  {isLoggedIn ? (
+                    <Link
+                      to="/panel"
+                      onClick={() => setIsOpen(false)}
+                      className="base-bold text-p1 uppercase transition-colors duration-500 cursor-pointer hover:text-p4 max-lg:my-4 max-lg:h5"
+                    >
+                      Panel
+                    </Link>
+                  ) : (
+                    <>
+                      <Link
+                        to="/login"
+                        onClick={() => setIsOpen(false)}
+                        className="base-bold text-p4 uppercase transition-colors duration-500 cursor-pointer hover:text-p1 max-lg:my-4 max-lg:h5"
+                      >
+                        Sign In
+                      </Link>
+                      <div className="dot" />
+                      <Link
+                        to="/register"
+                        onClick={() => setIsOpen(false)}
+                        className="base-bold text-p1 uppercase transition-colors duration-500 cursor-pointer hover:text-p4 max-lg:my-4 max-lg:h5"
+                      >
+                        Get Started
+                      </Link>
+                    </>
+                  )}
                 </li>
               </ul>
             </nav>
