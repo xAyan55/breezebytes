@@ -37,7 +37,7 @@ class ApiService {
         this.setToken(null);
         window.location.href = '/login';
       }
-      const message = data?.error?.message || response.statusText || 'An error occurred';
+      const message = data?.error?.message || data?.message || response.statusText || 'An error occurred';
       const error = new Error(message);
       error.code = data?.error?.code || 'API_ERROR';
       error.status = response.status;
@@ -61,6 +61,10 @@ class ApiService {
       method: 'POST',
       body: body instanceof FormData ? body : JSON.stringify(body),
     });
+  }
+
+  upload(endpoint, formData) {
+    return this.post(endpoint, formData);
   }
 
   patch(endpoint, body) {

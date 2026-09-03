@@ -25,8 +25,8 @@ router.get('/:id/files', authenticate, requireServerAccess('server.files.read'),
   }
 });
 
-// GET /api/v1/servers/:id/files/content
-router.get('/:id/files/content', authenticate, requireServerAccess('server.files.read'), async (req, res) => {
+// GET /api/v1/servers/:id/files/content & /api/v1/servers/:id/files/read
+const handleReadFile = async (req, res) => {
   const filePath = req.query.path;
   if (!filePath) {
     return res.status(400).json({ success: false, error: { code: 'PATH_REQUIRED', message: 'Path is required.' } });
@@ -38,7 +38,10 @@ router.get('/:id/files/content', authenticate, requireServerAccess('server.files
   } catch (err) {
     return res.status(400).json({ success: false, error: { code: 'FILE_READ_ERROR', message: err.message } });
   }
-});
+};
+
+router.get('/:id/files/content', authenticate, requireServerAccess('server.files.read'), handleReadFile);
+router.get('/:id/files/read', authenticate, requireServerAccess('server.files.read'), handleReadFile);
 
 // POST /api/v1/servers/:id/files/write
 router.post('/:id/files/write', authenticate, requireServerAccess('server.files.write'), async (req, res) => {
@@ -72,7 +75,7 @@ router.post('/:id/files/folder', authenticate, requireServerAccess('server.files
 
 // POST /api/v1/servers/:id/files/upload
 router.post('/:id/files/upload', authenticate, requireServerAccess('server.files.upload'), upload.array('files'), async (req, res) => {
-  const destDir = req.body.directory || '';
+  const destDir = req.body.directory || req.body.path || '';
   const uploadedFiles = req.files || [];
 
   try {
