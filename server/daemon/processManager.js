@@ -110,17 +110,33 @@ class ProcessManager extends EventEmitter {
     return [];
   }
 
+  isProcessAlive(pid) {
+    if (!pid || typeof pid !== 'number') return false;
+    try {
+      process.kill(pid, 0);
+      return true;
+    } catch (err) {
+      return err.code === 'EPERM';
+    }
+  }
+
   getStatus(serverId) {
     const id = Number(serverId);
     const item = this.processes.get(id);
-    if (item && item.proc && !item.proc.killed) {
-      return item.status || 'running';
+    if (item && item.proc && item.proc.pid) {
+      if (this.isProcessAlive(item.proc.pid) && !item.proc.killed) {
+        return item.status || 'running';
+      }
+      if (!this.isProcessAlive(item.proc.pid)) {
+        item.proc = null;
+        item.status = 'offline';
+        servers.update(id, { status: 'offline' });
+        this.emit('status', { serverId: id, status: 'offline' });
+        return 'offline';
+      }
+      return item.status || 'stopping';
     }
     const s = servers.findById(id);
-    if (s && (s.status === 'running' || s.status === 'starting' || s.status === 'stopping')) {
-      servers.update(id, { status: 'offline' });
-      return 'offline';
-    }
     return s ? s.status : 'offline';
   }
 
@@ -133,8 +149,24 @@ class ProcessManager extends EventEmitter {
       throw new Error('This server is suspended and cannot be started.');
     }
 
-    if (this.processes.has(id) && this.processes.get(id).proc) {
-      throw new Error('Server is already running or starting.');
+    if (this.processes.has(id)) {
+      const item = this.processes.get(id);
+      if (item.proc && item.proc.pid) {
+        if (this.isProcessAlive(item.proc.pid)) {
+          if (item.proc.killed || item.status === 'stopping') {
+            console.log(`[DAEMON] Terminating lingering process ${item.proc.pid} for server #${id} before starting`);
+            try {
+              item.proc.kill('SIGKILL');
+            } catch {}
+            await new Promise((r) => setTimeout(r, 500));
+            item.proc = null;
+          } else {
+            throw new Error('Server is already running or starting.');
+          }
+        } else {
+          item.proc = null;
+        }
+      }
     }
 
     const serverDir = this.getServerDir(server);
@@ -244,6 +276,10 @@ class ProcessManager extends EventEmitter {
 
     proc.on('close', (code, signal) => {
       clearTimeout(startDetectorTimer);
+      if (state.stopTimeout) {
+        clearTimeout(state.stopTimeout);
+        state.stopTimeout = null;
+      }
       console.log(`[DAEMON] Server #${id} process exited with code ${code}, signal ${signal}`);
       logEntry(`[BreezeBytes] Server process exited (code: ${code}, signal: ${signal || 'none'})`);
 
@@ -284,33 +320,38 @@ class ProcessManager extends EventEmitter {
   async stopServer(serverId) {
     const id = Number(serverId);
     const item = this.processes.get(id);
-    if (!item || !item.proc) {
+    if (!item || !item.proc || !this.isProcessAlive(item.proc.pid)) {
+      if (item) item.proc = null;
       servers.update(id, { status: 'offline' });
       this.emit('status', { serverId: id, status: 'offline' });
       return { success: true, status: 'offline' };
+    }
+
+    if (item.stopTimeout) {
+      clearTimeout(item.stopTimeout);
+      item.stopTimeout = null;
     }
 
     item.status = 'stopping';
     servers.update(id, { status: 'stopping' });
     this.emit('status', { serverId: id, status: 'stopping' });
 
+    const currentProc = item.proc;
+
     // Send graceful stop command to stdin
     try {
-      item.proc.stdin.write('stop\n');
+      currentProc.stdin.write('stop\n');
     } catch {
       // ignore
     }
 
     // Force kill if graceful shutdown exceeds 15 seconds
-    setTimeout(() => {
-      if (item.proc && !item.proc.killed) {
-        console.log(`[DAEMON] Server #${id} did not stop gracefully in 15s. Sending SIGTERM.`);
-        item.proc.kill('SIGTERM');
-        setTimeout(() => {
-          if (item.proc && !item.proc.killed) {
-            item.proc.kill('SIGKILL');
-          }
-        }, 3000);
+    item.stopTimeout = setTimeout(() => {
+      if (item.proc === currentProc && this.isProcessAlive(currentProc.pid)) {
+        console.log(`[DAEMON] Server #${id} did not stop gracefully in 15s. Sending SIGKILL.`);
+        try {
+          currentProc.kill('SIGKILL');
+        } catch {}
       }
     }, 15000);
 
@@ -327,9 +368,14 @@ class ProcessManager extends EventEmitter {
     const id = Number(serverId);
     await this.stopServer(id);
     return new Promise((resolve) => {
+      let attempts = 0;
       const checkStopped = setInterval(async () => {
-        if (this.getStatus(id) === 'offline') {
+        attempts++;
+        if (this.getStatus(id) === 'offline' || attempts > 20) {
           clearInterval(checkStopped);
+          if (this.getStatus(id) !== 'offline') {
+            await this.killServer(id);
+          }
           const res = await this.startServer(id);
           resolve(res);
         }
@@ -340,9 +386,18 @@ class ProcessManager extends EventEmitter {
   async killServer(serverId) {
     const id = Number(serverId);
     const item = this.processes.get(id);
-    if (item && item.proc) {
-      item.proc.kill('SIGKILL');
+    if (item) {
+      if (item.stopTimeout) {
+        clearTimeout(item.stopTimeout);
+        item.stopTimeout = null;
+      }
+      if (item.proc && item.proc.pid && this.isProcessAlive(item.proc.pid)) {
+        try {
+          item.proc.kill('SIGKILL');
+        } catch {}
+      }
       item.proc = null;
+      item.status = 'offline';
     }
     servers.update(id, { status: 'offline' });
     this.emit('status', { serverId: id, status: 'offline' });

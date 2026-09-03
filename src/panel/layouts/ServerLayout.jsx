@@ -120,10 +120,17 @@ const ServerLayout = () => {
     try {
       setActionLoading(action);
       setErrorMessage(null);
-      await api.post(`/servers/${server.id}/power`, { action });
+      if (action === 'start') setStatus('starting');
+      if (action === 'stop' || action === 'kill') setStatus('stopping');
+      const res = await api.post(`/servers/${server.id}/power`, { action });
+      if (res.data?.status) {
+        setStatus(res.data.status);
+      }
+      setTimeout(fetchServer, 1000);
     } catch (err) {
       setErrorMessage(`Power action "${action}" failed: ${err.message}`);
       setTimeout(() => setErrorMessage(null), 5000);
+      fetchServer();
     } finally {
       setActionLoading(null);
     }
@@ -475,7 +482,7 @@ const ServerLayout = () => {
                   icon={XOctagon}
                   loading={actionLoading === 'kill'}
                   onClick={() => handlePower('kill')}
-                  disabled={(!isOnline && !isStarting && !isStopping) || !!actionLoading}
+                  disabled={!!actionLoading}
                 >
                   Kill
                 </BreezeButton>
