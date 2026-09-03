@@ -45,7 +45,7 @@ class ProcessManager extends EventEmitter {
     for (const [id, item] of this.processes.entries()) {
       if (item && item.proc) {
         try {
-          item.proc.kill('SIGTERM');
+          item.proc.kill('SIGKILL');
         } catch {
           // ignore
         }

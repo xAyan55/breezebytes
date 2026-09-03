@@ -86,10 +86,34 @@ EOF
         `cd ${TARGET_DIR} && npm install && npm run build`
       );
 
-      // 4. Restart backend service & reload nginx
+      // 4. Ensure breezebytes-api.service unit has fast stop timeout and restart services
       await runRemoteCommand(
         conn,
-        `systemctl restart breezebytes-api.service && systemctl reload nginx`
+        `cat << 'EOF' > /etc/systemd/system/breezebytes-api.service
+[Unit]
+Description=BreezeBytes Control Plane & Daemon
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/breezebytes
+ExecStart=/usr/bin/node /var/www/breezebytes/server/server.js
+Restart=always
+RestartSec=3
+TimeoutStopSec=5
+KillMode=control-group
+Environment=PORT=3001
+Environment=DATA_DIR=/var/lib/breezebytes
+Environment=SERVERS_DIR=/var/lib/breezebytes/servers
+Environment=BACKUPS_DIR=/var/lib/breezebytes/backups
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl daemon-reload
+systemctl restart breezebytes-api.service && systemctl reload nginx`
       );
 
       // 4. Verify service status & health check
