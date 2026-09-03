@@ -22,12 +22,15 @@ import subusersRouter from './routes/subusers.js';
 import accountRouter from './routes/account.js';
 import adminRouter from './routes/admin.js';
 
+import { statusPingServer } from './daemon/statusPingServer.js';
+
 // 1. Run migrations and seed data
 runMigrations();
 
-// 2. Initialize background scheduler & Playit control plane
+// 2. Initialize background scheduler, Playit control plane & fallback status ping server
 schedulerWorker.init();
 playitService.init();
+statusPingServer.initialize();
 
 const app = express();
 const server = http.createServer(app);

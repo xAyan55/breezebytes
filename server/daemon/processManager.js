@@ -4,7 +4,9 @@ import fs from 'fs';
 import pidusage from 'pidusage';
 import { EventEmitter } from 'events';
 import { fileURLToPath } from 'url';
-import { servers, activity_logs } from '../db/database.js';
+import { servers, activity_logs, allocations } from '../db/database.js';
+import { DEFAULT_MOTDS, formatMotd } from '../config/motd.js';
+import { statusPingServer } from './statusPingServer.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -182,6 +184,38 @@ class ProcessManager extends EventEmitter {
       fs.writeFileSync(eulaPath, 'eula=true\n', 'utf8');
     }
 
+    // Ensure default 64x64 server-icon.png exists
+    const iconTemplatePath = path.join(__dirname, '../templates/server-icon.png');
+    const targetIconPath = path.join(serverDir, 'server-icon.png');
+    if (fs.existsSync(iconTemplatePath) && !fs.existsSync(targetIconPath)) {
+      try {
+        fs.copyFileSync(iconTemplatePath, targetIconPath);
+      } catch {}
+    }
+
+    // Ensure server.properties has the default online MOTD
+    const propsPath = path.join(serverDir, 'server.properties');
+    if (fs.existsSync(propsPath)) {
+      try {
+        let content = fs.readFileSync(propsPath, 'utf8');
+        const onlineMotd = formatMotd(DEFAULT_MOTDS.online, server.name, 'unicode');
+        if (!content.includes('motd=')) {
+          content += `\nmotd=${onlineMotd}\n`;
+          fs.writeFileSync(propsPath, content, 'utf8');
+        } else if (content.includes('motd=\\u00A7bBreezeBytes') || content.includes('motd=A Minecraft Server')) {
+          content = content.replace(/motd=.*/, `motd=${onlineMotd}`);
+          fs.writeFileSync(propsPath, content, 'utf8');
+        }
+      } catch {}
+    }
+
+    // Release port from fallback status ping responder
+    const alloc = allocations.findOne({ server_id: id, is_primary: 1 }) || allocations.findOne({ server_id: id });
+    if (alloc && alloc.port) {
+      statusPingServer.setServerStatus(id, 'starting');
+      await statusPingServer.releasePort(alloc.port);
+    }
+
     // Update status to starting
     servers.update(id, { status: 'starting' });
     this.emit('status', { serverId: id, status: 'starting' });
@@ -305,6 +339,13 @@ class ProcessManager extends EventEmitter {
         state.crashCount = 0;
         servers.update(id, { status: 'offline' });
         this.emit('status', { serverId: id, status: 'offline' });
+      }
+
+      // Re-claim port for status ping responder with offline MOTD
+      const alloc = allocations.findOne({ server_id: id, is_primary: 1 }) || allocations.findOne({ server_id: id });
+      if (alloc && alloc.port) {
+        statusPingServer.setServerStatus(id, 'offline');
+        statusPingServer.claimPort(alloc.port, id);
       }
     });
 

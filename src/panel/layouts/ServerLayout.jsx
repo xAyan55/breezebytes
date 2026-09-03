@@ -6,7 +6,7 @@ import BreezeBadge from '../../components/ui/BreezeBadge.jsx';
 import BreezeButton from '../../components/ui/BreezeButton.jsx';
 import BreezeIcon from '../../components/ui/BreezeIcon.jsx';
 import ErrorBoundary from '../../components/ui/ErrorBoundary.jsx';
-import SoftwareIcon from '../../components/ui/SoftwareIcons.jsx';
+import ServerAvatar from '../../components/ui/ServerAvatar.jsx';
 import {
   Terminal,
   FolderOpen,
@@ -255,9 +255,7 @@ const ServerLayout = () => {
           {/* Server Identity Card in Sidebar */}
           {(!collapsed || mobileOpen) ? (
             <div className="p-3 rounded-2xl bg-s1/70 border border-s3/80 flex items-center gap-3">
-              <div className="size-9 rounded-xl border border-s3 bg-s2 flex items-center justify-center p-1.5 flex-shrink-0 shadow-inner">
-                <SoftwareIcon software={server.software} size={20} className="text-p1" />
-              </div>
+              <ServerAvatar server={server} className="size-9" iconSize={20} rounded="rounded-xl" />
               <div className="min-w-0 flex-1">
                 <h2 className="text-xs font-bold text-p4 truncate" title={server.name}>
                   {server.name}
@@ -278,13 +276,13 @@ const ServerLayout = () => {
             </div>
           ) : (
             <div
-              className="size-10 mx-auto rounded-xl border border-s3 bg-s1/80 flex items-center justify-center p-1.5 relative group cursor-default"
+              className="size-10 mx-auto rounded-xl relative group cursor-default flex items-center justify-center"
               title={`${server.name} (${status}) - ${server.software || 'Paper'} ${server.minecraft_version || ''}`}
             >
-              <SoftwareIcon software={server.software} size={20} className="text-p1" />
+              <ServerAvatar server={server} className="size-10" iconSize={20} rounded="rounded-xl" />
               <span
                 className={clsx(
-                  'absolute -top-0.5 -right-0.5 size-2.5 rounded-full border-2 border-s2',
+                  'absolute -top-0.5 -right-0.5 size-2.5 rounded-full border-2 border-s2 z-10',
                   isOnline ? 'bg-emerald-400' : 'bg-p5/40',
                 )}
               />
@@ -402,9 +400,7 @@ const ServerLayout = () => {
               <div className="absolute inset-0 bg-gradient-to-t from-s1/70 via-transparent to-transparent pointer-events-none" />
 
               <div className="relative z-10 flex items-center gap-3.5 min-w-0">
-                <div className="size-11 rounded-xl border border-s3 bg-s1/90 backdrop-blur-md flex items-center justify-center p-1.5 flex-shrink-0 shadow-md">
-                  <SoftwareIcon software={server.software} size={24} className="text-p1" />
-                </div>
+                <ServerAvatar server={server} className="size-12" iconSize={26} rounded="rounded-xl" />
                 <div className="min-w-0">
                   <div className="flex items-center gap-3 flex-wrap">
                     <h1 className="h6 text-p4 truncate font-bold drop-shadow-md">{server.name}</h1>

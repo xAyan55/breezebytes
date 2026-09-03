@@ -8,7 +8,7 @@ import BreezePageHeader from '../../components/ui/BreezePageHeader.jsx';
 import BreezeEmptyState from '../../components/ui/BreezeEmptyState.jsx';
 import BreezeIcon from '../../components/ui/BreezeIcon.jsx';
 import { BreezeCardSkeleton } from '../../components/ui/BreezeSkeleton.jsx';
-import SoftwareIcon from '../../components/ui/SoftwareIcons.jsx';
+import ServerAvatar from '../../components/ui/ServerAvatar.jsx';
 import {
   Server,
   Cpu,
@@ -228,9 +228,7 @@ const ServerList = () => {
                   {/* Header: Icon + Title + Status */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="size-11 rounded-2xl bg-s1 border-2 border-s3 flex items-center justify-center p-2 flex-shrink-0 group-hover:border-s4 transition-colors">
-                        <SoftwareIcon software={server.software} size={22} className="text-p1" />
-                      </div>
+                      <ServerAvatar server={server} className="size-11" iconSize={22} rounded="rounded-2xl" />
                       <div className="min-w-0">
                         <Link
                           to={`/panel/servers/${server.id}/console`}
