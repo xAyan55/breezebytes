@@ -100,16 +100,11 @@ class PlayerManager extends EventEmitter {
       worker.onlinePlayers.clear();
       worker.previousOnlinePlayers.clear();
       worker.restartGap = false;
-      if (worker.pollTimer) {
-        clearInterval(worker.pollTimer);
-        worker.pollTimer = null;
-      }
+      worker.pollTimer = null;
       this.broadcastRoster(serverId, 'live_server');
     } else if (status === 'running') {
       worker.restartGap = false;
-      this.startPolling(serverId);
-      // Trigger immediate list synchronization
-      processManager.sendCommand(serverId, 'list');
+      this.broadcastRoster(serverId, 'live_server');
     }
   }
 
@@ -158,47 +153,20 @@ class PlayerManager extends EventEmitter {
   }
 
   /**
-   * Periodic reconciliation loop (shared single worker per server)
+   * Subscribe client to live updates for this server
    */
-  startPolling(serverId) {
-    const worker = this.getWorker(serverId);
-    if (worker.pollTimer) return;
-
-    worker.pollTimer = setInterval(() => {
-      const status = processManager.getStatus(serverId);
-      if (status !== 'running') {
-        clearInterval(worker.pollTimer);
-        worker.pollTimer = null;
-        return;
-      }
-      // Issue non-intrusive 'list' command to reconcile truth
-      try {
-        processManager.sendCommand(serverId, 'list');
-      } catch {}
-    }, 8000);
-  }
-
   subscribe(serverId) {
     const worker = this.getWorker(serverId);
     worker.subscribers++;
-    if (processManager.getStatus(serverId) === 'running') {
-      this.startPolling(serverId);
-    }
   }
 
+  /**
+   * Unsubscribe client from live updates
+   */
   unsubscribe(serverId) {
     const worker = this.workers.get(serverId);
     if (worker) {
       worker.subscribers = Math.max(0, worker.subscribers - 1);
-      if (worker.subscribers === 0 && worker.pollTimer) {
-        // Inactivity cleanup after 30s if no subscribers
-        setTimeout(() => {
-          if (worker.subscribers === 0 && worker.pollTimer) {
-            clearInterval(worker.pollTimer);
-            worker.pollTimer = null;
-          }
-        }, 30000);
-      }
     }
   }
 

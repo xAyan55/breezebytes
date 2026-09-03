@@ -59,7 +59,7 @@ const PlayerDetailsModal = ({
   };
 
   return (
-    <BreezeModal isOpen={isOpen} onClose={onClose} title={player.username} size="lg">
+    <BreezeModal open={isOpen} isOpen={isOpen} onClose={onClose} title={player.username} size="xl">
       <div className="flex flex-col lg:flex-row items-center lg:items-start gap-6 w-full">
         {/* Left Column: McView3D 3D Skin Viewer */}
         <div className="w-full max-w-[340px] flex-shrink-0 flex flex-col items-center">

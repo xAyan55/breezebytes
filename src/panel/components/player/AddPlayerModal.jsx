@@ -49,7 +49,7 @@ const AddPlayerModal = ({
   };
 
   return (
-    <BreezeModal isOpen={isOpen} onClose={onClose} title="Add & Manage Player" size="md">
+    <BreezeModal open={isOpen} isOpen={isOpen} onClose={onClose} title="Add & Manage Player" size="md">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {/* Tab switchers */}
         <div className="grid grid-cols-3 gap-1.5 p-1 bg-s1 rounded-xl border border-s3 text-xs">

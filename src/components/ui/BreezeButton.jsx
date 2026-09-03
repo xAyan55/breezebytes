@@ -12,6 +12,8 @@ const variants = {
     'bg-transparent text-p5 font-medium border-2 border-transparent hover:bg-s2/60 hover:text-p4',
   destructive:
     'bg-red-500/10 text-red-400 font-semibold border-2 border-red-500/30 hover:bg-red-500 hover:text-white',
+  danger:
+    'bg-red-500/10 text-red-400 font-semibold border-2 border-red-500/30 hover:bg-red-500 hover:text-white',
   success:
     'bg-emerald-500/10 text-emerald-400 font-semibold border-2 border-emerald-500/30 hover:bg-emerald-500 hover:text-black',
   warning:

@@ -83,7 +83,7 @@ const PlayerActionModal = ({
   const config = getActionConfig();
 
   return (
-    <BreezeModal isOpen={isOpen} onClose={onClose} title={config.title} size="md">
+    <BreezeModal open={isOpen} isOpen={isOpen} onClose={onClose} title={config.title} size="md">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {/* Warning card */}
         <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/25 flex items-start gap-3">
